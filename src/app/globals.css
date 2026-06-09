@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+html {
+  background: #0a0a0a;
+  color: #f0f0f0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* Focus rings */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+
+/* Chip component */
+.chip {
+  @apply text-sm px-4 py-2 rounded-full border cursor-pointer transition-all select-none;
+  background: #1a1a1a;
+  border-color: #222;
+  color: #666;
+}
+.chip:hover { border-color: #333; }
+.chip.active {
+  background: rgba(232, 255, 71, 0.1);
+  border-color: rgba(232, 255, 71, 0.4);
+  color: #E8FF47;
+  font-weight: 600;
+}
+.chip.active-blue {
+  background: rgba(106, 180, 255, 0.1);
+  border-color: rgba(106, 180, 255, 0.4);
+  color: #6AB4FF;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.4s ease both; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
