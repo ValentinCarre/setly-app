@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setly — La scène la plus proche est à un swipe</title>
+<meta name="description" content="Setly connecte artistes musicaux et établissements pour des soirées à moindre coût. DJ, chanteurs, musiciens : trouvez votre scène. Bars, cafés, clubs : trouvez votre artiste.">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#E8FF47;--accent-dim:rgba(232,255,71,0.1);--accent-mid:rgba(232,255,71,0.25);
+  --blue:#6ab4ff;--blue-dim:rgba(106,180,255,0.1);--blue-mid:rgba(106,180,255,0.25);
+  --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--border:#222;
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --font-display:'Syne',sans-serif;--font-body:'Inter',sans-serif;
+  --max:1120px;
+}
+html{scroll-behavior:smooth;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+body{overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(20px);background:rgba(10,10,10,0.8);border-bottom:1px solid rgba(255,255,255,0.04)}
+.nav-inner{max-width:var(--max);margin:0 auto;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-1px}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{font-size:13px;color:var(--text2);transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{font-size:13px;font-weight:600;background:var(--accent);color:#111;padding:8px 20px;border-radius:8px;transition:transform .15s,box-shadow .15s}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(232,255,71,0.25)}
+.nav-login{font-size:13px;font-weight:500;color:var(--text2);border:1px solid var(--border);padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;transition:all .2s}
+.nav-login i{font-size:16px}
+.nav-login:hover{color:var(--text);border-color:var(--text2);background:rgba(255,255,255,0.04)}
+
+/* Login Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:24px;width:100%;max-width:400px;padding:32px 28px;position:relative;animation:fadeUp .3s both}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;color:var(--text3);font-size:16px}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.modal-logo{font-family:var(--font-display);font-size:28px;font-weight:800;text-align:center;margin-bottom:4px}
+.modal-logo span{color:var(--accent)}
+.modal-subtitle{font-size:13px;color:var(--text3);text-align:center;margin-bottom:24px}
+.modal-field{margin-bottom:14px}
+.modal-field label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;display:block;margin-bottom:5px}
+.modal-field input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);font-family:var(--font-body);outline:none;transition:border-color .2s}
+.modal-field input::placeholder{color:var(--text3)}
+.modal-field input:focus{border-color:var(--accent)}
+.modal-btn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font-body);background:var(--accent);color:#111;transition:all .2s;margin-top:4px}
+.modal-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(232,255,71,0.3)}
+.modal-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.modal-divider span{font-size:11px;color:var(--text3)}
+.modal-divider::before,.modal-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.modal-switch{font-size:13px;color:var(--text3);text-align:center;margin-top:16px}
+.modal-switch a{color:var(--accent);font-weight:600;cursor:pointer;transition:color .2s}
+.modal-switch a:hover{color:var(--text)}
+.modal-forgot{font-size:12px;color:var(--text3);text-align:right;margin-top:-8px;margin-bottom:14px}
+.modal-forgot a{color:var(--blue);cursor:pointer}
+.modal-forgot a:hover{color:var(--text)}
+
+/* HERO */
+.hero{padding:140px 2rem 80px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(232,255,71,0.06) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid var(--accent-mid);border-radius:30px;padding:6px 16px;font-size:12px;color:var(--accent);font-weight:500;margin-bottom:28px;animation:fadeUp .8s both}
+.hero-badge i{font-size:14px}
+.hero h1{font-family:var(--font-display);font-size:clamp(40px,7vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2px;max-width:700px;margin:0 auto 24px;animation:fadeUp .8s .1s both}
+.hero h1 .accent{color:var(--accent)}
+.hero h1 .blue{color:var(--blue)}
+.hero-sub{font-size:18px;color:var(--text2);max-width:520px;margin:0 auto 40px;line-height:1.6;font-weight:300;animation:fadeUp .8s .2s both}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fadeUp .8s .3s both}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;transition:all .2s;border:none;cursor:pointer;font-family:var(--font-body)}
+.btn-accent{background:var(--accent);color:#111}
+.btn-accent:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(232,255,71,0.3)}
+.btn-blue{background:var(--blue);color:#111}
+.btn-blue:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(106,180,255,0.3)}
+.btn i{font-size:18px}
+.hero-note{font-size:12px;color:var(--text3);margin-top:16px;animation:fadeUp .8s .4s both}
+
+/* STATS STRIP */
+.stats{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:32px 2rem}
+.stats-inner{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-val{font-family:var(--font-display);font-size:28px;font-weight:700}
+.stat-val.y{color:var(--accent)}
+.stat-val.b{color:var(--blue)}
+.stat-lbl{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* SECTION */
+.section{padding:100px 2rem;max-width:var(--max);margin:0 auto}
+.section-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;padding:5px 12px;border-radius:6px;margin-bottom:16px}
+.badge-y{background:var(--accent-dim);color:var(--accent)}
+.badge-b{background:var(--blue-dim);color:var(--blue)}
+.section-title{font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-1px;line-height:1.15;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--text2);max-width:480px;line-height:1.6;font-weight:300}
+
+/* HOW IT WORKS */
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.how-card{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:28px 24px;position:relative;transition:border-color .3s,transform .3s}
+.how-card:hover{border-color:rgba(232,255,71,0.2);transform:translateY(-4px)}
+.how-num{font-family:var(--font-display);font-size:48px;font-weight:800;color:rgba(232,255,71,0.08);position:absolute;top:16px;right:20px;line-height:1}
+.how-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:22px}
+.how-icon.y{background:var(--accent-dim);color:var(--accent)}
+.how-icon.b{background:var(--blue-dim);color:var(--blue)}
+.how-title{font-family:var(--font-display);font-size:17px;font-weight:600;margin-bottom:8px}
+.how-desc{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* DUAL SECTION */
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}
+.dual-card{background:var(--bg3);border:1px solid var(--border);border-radius:24px;padding:36px 32px;position:relative;overflow:hidden}
+.dual-card::before{content:'';position:absolute;top:-80px;right:-80px;width:200px;height:200px;border-radius:50%;pointer-events:none}
+.dual-card.artist::before{background:radial-gradient(circle,rgba(232,255,71,0.06),transparent 70%)}
+.dual-card.venue::before{background:radial-gradient(circle,rgba(106,180,255,0.06),transparent 70%)}
+.dual-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:20px;padding:4px 10px;border-radius:6px;display:inline-block}
+.dual-card.artist .dual-label{background:var(--accent-dim);color:var(--accent)}
+.dual-card.venue .dual-label{background:var(--blue-dim);color:var(--blue)}
+.dual-title{font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:20px;letter-spacing:-0.5px}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.feat-item{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--text2);line-height:1.5}
+.feat-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.dual-card.artist .feat-icon{background:var(--accent-dim);color:var(--accent)}
+.dual-card.venue .feat-icon{background:var(--blue-dim);color:var(--blue)}
+.dual-cta{display:inline-flex;align-items:center;gap:6px;margin-top:24px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;transition:all .2s}
+.dual-card.artist .dual-cta{background:var(--accent);color:#111}
+.dual-card.artist .dual-cta:hover{box-shadow:0 6px 24px rgba(232,255,71,0.25);transform:translateY(-2px)}
+.dual-card.venue .dual-cta{background:var(--blue);color:#111}
+.dual-card.venue .dual-cta:hover{box-shadow:0 6px 24px rgba(106,180,255,0.25);transform:translateY(-2px)}
+
+/* TESTIMONIALS */
+.testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.testi{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:24px}
+.testi-quote{font-size:14px;color:var(--text2);line-height:1.6;font-style:italic;margin-bottom:16px}
+.testi-author{display:flex;align-items:center;gap:10px}
+.testi-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+.testi-avatar.y{background:var(--accent-dim)}
+.testi-avatar.b{background:var(--blue-dim)}
+.testi-name{font-size:13px;font-weight:600}
+.testi-role{font-size:11px;color:var(--text3)}
+
+/* CTA FINAL */
+.final-cta{text-align:center;padding:100px 2rem;position:relative}
+.final-cta::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(232,255,71,0.04) 0%,transparent 70%);pointer-events:none}
+.final-title{font-family:var(--font-display);font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-2px;margin-bottom:12px}
+.final-sub-intro{font-size:15px;color:var(--text2);margin-bottom:32px;font-weight:300}
+.form-header{animation:fadeUp .4s both}
+.form-header-emoji{font-size:48px;margin-bottom:12px}
+
+/* Role toggle */
+.role-toggle{display:inline-flex;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:4px;position:relative;margin-bottom:32px}
+.role-tab{background:none;border:none;padding:10px 24px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:6px;border-radius:10px;transition:color .3s;position:relative;z-index:1}
+.role-tab i{font-size:16px}
+.role-tab.active{color:var(--text)}
+.role-slider{position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);background:var(--border);border-radius:10px;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.role-toggle.venue-active .role-slider{transform:translateX(100%)}
+
+/* Panels */
+.signup-panel{display:none;max-width:480px;margin:0 auto;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:28px 28px 24px;text-align:left;position:relative;overflow:hidden}
+.signup-panel.active{display:block;animation:fadeUp .4s both}
+.panel-glow{position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;pointer-events:none}
+.artist-glow{background:radial-gradient(circle,rgba(232,255,71,0.06),transparent 70%)}
+.venue-glow{background:radial-gradient(circle,rgba(106,180,255,0.06),transparent 70%)}
+.panel-header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.panel-emoji{font-size:32px}
+.panel-title{font-family:var(--font-display);font-size:17px;font-weight:700}
+.panel-hint{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* Form fields */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field.full{margin-bottom:14px}
+.form-field label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:500}
+.form-field input{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--text);font-family:var(--font-body);outline:none;transition:border-color .2s;width:100%}
+.form-field input::placeholder{color:var(--text3)}
+.form-field input:focus{border-color:var(--accent)}
+#panel-venue .form-field input:focus{border-color:var(--blue)}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.f-chip{font-size:12px;padding:6px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;color:var(--text3);cursor:pointer;transition:all .2s;user-select:none}
+.f-chip.on{background:var(--accent-dim);border-color:var(--accent-mid);color:var(--accent);font-weight:600}
+#panel-venue .f-chip.on{background:var(--blue-dim);border-color:var(--blue-mid);color:var(--blue)}
+
+/* Submit */
+.submit-btn{width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-top:4px}
+
+/* Social link inputs */
+.social-stack{display:flex;flex-direction:column;gap:8px}
+.social-input{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s}
+.social-input:focus-within{border-color:var(--accent)}
+#panel-venue .social-input:focus-within{border-color:var(--blue)}
+.social-prefix{width:40px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1px solid var(--border)}
+.social-prefix i{font-size:17px}
+.social-prefix.sc{background:rgba(255,85,0,0.06)}.social-prefix.sc i{color:#ff5500}
+.social-prefix.ig{background:rgba(225,48,108,0.06)}.social-prefix.ig i{color:#e1306c}
+.social-prefix.tt{background:rgba(255,255,255,0.04)}.social-prefix.tt i{color:var(--text2)}
+.social-prefix.yt{background:rgba(255,0,0,0.05)}.social-prefix.yt i{color:#ff0000}
+.social-prefix.sp{background:rgba(30,215,96,0.06)}.social-prefix.sp i{color:#1ed760}
+.social-input input{flex:1;background:none;border:none;outline:none;padding:11px 12px;font-size:13px;color:var(--text);font-family:var(--font-body)}
+.social-input input::placeholder{color:var(--text3)}
+.social-hint{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:6px}
+.social-hint i{font-size:12px;color:var(--accent)}
+.accent-btn{background:var(--accent);color:#111}
+.accent-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(232,255,71,0.3)}
+.blue-btn{background:var(--blue);color:#111}
+.blue-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(106,180,255,0.3)}
+.form-note{font-size:11px;color:var(--text3);margin-top:12px;text-align:center}
+
+/* Password field */
+.pw-field{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s}
+.pw-field:focus-within{border-color:var(--accent)}
+#panel-venue .pw-field:focus-within{border-color:var(--blue)}
+.pw-field input{flex:1;background:none;border:none;outline:none;padding:11px 14px;font-size:13px;color:var(--text);font-family:var(--font-body)}
+.pw-field input::placeholder{color:var(--text3)}
+.pw-toggle{padding:10px 14px 10px 0;cursor:pointer;color:var(--text3);font-size:16px;display:flex;align-items:center;user-select:none;transition:color .2s}
+.pw-toggle:hover{color:var(--text2)}
+.pw-hint{font-size:10px;color:var(--accent);display:flex;align-items:center;gap:5px;margin-top:6px}
+.pw-hint i{font-size:12px}
+.pw-match-error{font-size:10px;color:#f87171;display:flex;align-items:center;gap:5px;margin-top:6px}
+.pw-match-error i{font-size:12px}
+
+/* Subcategory section */
+.subcat-section{animation:fadeUp .3s both}
+.subcat-chips{gap:6px}
+.subcat-chips .f-chip{font-size:12px;padding:6px 12px;transition:all .15s}
+.subcat-hint{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:8px}
+.subcat-hint i{font-size:12px;color:var(--accent)}
+.artist-type-chip.on{position:relative}
+.artist-type-chip{transition:all .15s}
+
+/* Success state */
+.signup-panel.success{text-align:center;padding:48px 28px}
+.success-icon{font-size:48px;margin-bottom:12px}
+.success-title{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:8px}
+.success-sub{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* Google search bar */
+.g-search-wrap{position:relative;margin-bottom:12px}
+.g-search-bar{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:0 14px;transition:border-color .2s}
+.g-search-bar.focused{border-color:var(--blue)}
+.g-search-bar i{font-size:16px;color:var(--text3);flex-shrink:0}
+.g-search-bar input{flex:1;background:none;border:none;outline:none;padding:13px 10px;font-size:13px;color:var(--text);font-family:var(--font-body)}
+.g-search-bar input::placeholder{color:var(--text3)}
+.g-spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;display:none}
+.g-spinner.show{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Autocomplete results */
+.g-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none;z-index:10}
+.g-results.show{display:block;animation:fadeUp .2s both}
+.g-result-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(255,255,255,0.03)}
+.g-result-item:last-child{border:none}
+.g-result-item:hover{background:rgba(106,180,255,0.06)}
+.g-result-pin{width:32px;height:32px;border-radius:8px;background:var(--blue-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.g-result-pin i{font-size:14px;color:var(--blue)}
+.g-result-info{flex:1;min-width:0}
+.g-result-name{font-size:13px;font-weight:600;color:var(--text)}
+.g-result-addr{font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g-result-rating{display:flex;align-items:center;gap:4px;margin-top:2px}
+.g-result-stars{font-size:10px;color:#f0c040;letter-spacing:-1px}
+.g-result-score{font-size:10px;color:var(--text3)}
+.g-result-arrow{font-size:14px;color:var(--text3);flex-shrink:0}
+
+/* Imported card */
+.g-imported-card{background:var(--bg2);border:1px solid rgba(106,180,255,0.2);border-radius:14px;padding:14px 16px}
+.g-imp-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.g-imp-header i{font-size:16px;color:var(--blue)}
+.g-imp-header span{font-size:11px;color:var(--blue);font-weight:600}
+.g-imp-badge{margin-left:auto;font-size:9px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:5px}
+.g-imp-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12px}
+.g-imp-row i{font-size:13px;color:var(--text3);width:16px;text-align:center;flex-shrink:0}
+.g-imp-label{color:var(--text3);min-width:50px}
+.g-imp-val{color:var(--text);flex:1}
+.g-imp-check{font-size:13px;color:#4ade80;flex-shrink:0}
+
+/* Manual link */
+.g-manual-link{font-size:12px;color:var(--text3);text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:color .2s;padding:4px 0}
+.g-manual-link:hover{color:var(--text2)}
+.g-manual-link i{font-size:13px}
+
+/* Contact hint */
+.contact-hint{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:6px}
+.contact-hint i{font-size:12px;color:#4ade80}
+
+/* Photo upload zone */
+.photo-upload-zone{margin-top:2px}
+.photo-dropzone{background:var(--bg2);border:2px dashed var(--border);border-radius:14px;padding:24px 16px;text-align:center;transition:border-color .2s,background .2s;cursor:pointer}
+.photo-dropzone:hover,.photo-dropzone.dragover{border-color:var(--blue-mid);background:rgba(106,180,255,0.03)}
+.photo-dropzone i{font-size:28px;color:var(--text3);display:block;margin-bottom:6px}
+.drop-title{font-size:13px;font-weight:600;color:var(--text2)}
+.drop-or{font-size:11px;color:var(--text3);margin:6px 0}
+.drop-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-dim);border:1px solid var(--blue-mid);border-radius:8px;padding:7px 16px;cursor:pointer;transition:all .2s}
+.drop-btn:hover{background:rgba(106,180,255,0.15)}
+.drop-btn i{font-size:14px}
+.drop-hint{font-size:10px;color:var(--text3);margin-top:8px}
+.photo-preview-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.photo-preview-thumb{width:64px;height:48px;border-radius:8px;overflow:hidden;position:relative;border:1px solid var(--border);background:var(--bg2)}
+.photo-preview-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-preview-remove{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.photo-preview-remove i{font-size:9px;color:#f87171}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:40px 2rem;text-align:center}
+.footer-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-family:var(--font-display);font-size:18px;font-weight:700}
+.footer-logo span{color:var(--accent)}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:12px;color:var(--text3);transition:color .2s}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:11px;color:var(--text3)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* MOBILE */
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta):not(.nav-login){display:none}
+  .stats-inner{grid-template-columns:repeat(2,1fr);gap:16px}
+  .how{grid-template-columns:1fr}
+  .dual{grid-template-columns:1fr}
+  .testimonials{grid-template-columns:1fr}
+  .section{padding:60px 1.5rem}
+  .footer-inner{flex-direction:column;text-align:center}
+  .form-grid{grid-template-columns:1fr}
+  .signup-panel{padding:22px 18px 20px}
+  .role-tab{padding:10px 16px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">Set<span>ly</span></div>
+    <div class="nav-links">
+      <a href="#comment">Comment ça marche</a>
+      <a href="#artistes">Artistes</a>
+      <a href="#etablissements">Établissements</a>
+      <a href="/signup" class="nav-cta">S'inscrire</a>
+      <a href="/login" class="nav-login"><i class="ti ti-user-circle"></i> Connexion</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><i class="ti ti-sparkles"></i> Lancement Côte d'Azur — Inscriptions ouvertes</div>
+  <h1>La <span class="accent">scène</span> la plus proche est à un <span class="blue">swipe</span></h1>
+  <p class="hero-sub">Setly connecte artistes musicaux et établissements pour organiser des soirées — simplement, gratuitement.</p>
+  <div class="hero-ctas">
+    <a href="/signup?role=artiste" class="btn btn-accent"><i class="ti ti-microphone-2"></i> Je suis artiste</a>
+    <a href="/signup?role=etablissement" class="btn btn-blue"><i class="ti ti-building-store"></i> Je suis un établissement</a>
+  </div>
+  <p class="hero-note">100% gratuit · Aucun engagement · Disponible sur iOS & Android</p>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-inner">
+    <div><div class="stat-val y">0€</div><div class="stat-lbl">Pour les artistes amateurs</div></div>
+    <div><div class="stat-val b">0€</div><div class="stat-lbl">Pour les établissements</div></div>
+    <div><div class="stat-val y">30s</div><div class="stat-lbl">Pour s'inscrire</div></div>
+    <div><div class="stat-val b">24h</div><div class="stat-lbl">Pour trouver un artiste</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section reveal" id="comment">
+  <div class="section-badge badge-y"><i class="ti ti-route"></i> En 3 étapes</div>
+  <h2 class="section-title">Comment ça marche</h2>
+  <p class="section-sub">Que vous soyez artiste ou établissement, tout se fait en quelques taps.</p>
+  <div class="how">
+    <div class="how-card">
+      <div class="how-num">01</div>
+      <div class="how-icon y"><i class="ti ti-user-plus"></i></div>
+      <div class="how-title">Créez votre profil</div>
+      <div class="how-desc">Artiste : vos styles, dispos et démo. Établissement : import automatique depuis Google, zéro saisie.</div>
+    </div>
+    <div class="how-card">
+      <div class="how-num">02</div>
+      <div class="how-icon y"><i class="ti ti-arrows-exchange"></i></div>
+      <div class="how-title">Match intelligent</div>
+      <div class="how-desc">Setly suggère les meilleurs profils selon l'ambiance, les dates et la localisation. Swipez, contactez.</div>
+    </div>
+    <div class="how-card">
+      <div class="how-num">03</div>
+      <div class="how-icon y"><i class="ti ti-music"></i></div>
+      <div class="how-title">Jouez, vibrez</div>
+      <div class="how-desc">L'artiste joue, l'établissement fait salle comble. Après la soirée, chacun laisse un avis.</div>
+    </div>
+  </div>
+</section>
+
+<!-- DUAL VALUE PROP -->
+<section class="section reveal">
+  <div class="dual" id="artistes">
+    <div class="dual-card artist">
+      <div class="dual-label">Artistes</div>
+      <h3 class="dual-title">Trouvez votre scène,<br>bâtissez votre réputation</h3>
+      <ul class="feat-list">
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-eye"></i></div>
+          <div><strong style="color:var(--text)">Visibilité immédiate</strong> — votre profil vu par tous les établissements de votre zone</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-calendar-event"></i></div>
+          <div><strong style="color:var(--text)">Bookings directs</strong> — les bars et cafés vous contactent, pas l'inverse</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-star"></i></div>
+          <div><strong style="color:var(--text)">Réputation vérifiable</strong> — avis, historique de soirées, note publique</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-coin-off"></i></div>
+          <div><strong style="color:var(--text)">Gratuit, sans commission</strong> — jouez pour la visibilité ou fixez votre cachet</div>
+        </li>
+      </ul>
+      <a href="/signup?role=artiste" class="dual-cta">S'inscrire comme artiste <i class="ti ti-arrow-right" style="font-size:14px"></i></a>
+    </div>
+    <div class="dual-card venue" id="etablissements">
+      <div class="dual-label">Établissements</div>
+      <h3 class="dual-title">Animez vos soirées,<br>sans exploser votre budget</h3>
+      <ul class="feat-list">
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-brand-google"></i></div>
+          <div><strong style="color:var(--text)">Import Google en 1 tap</strong> — photos, adresse, horaires importés automatiquement</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-sparkles"></i></div>
+          <div><strong style="color:var(--text)">Suggestions intelligentes</strong> — artistes compatibles avec votre ambiance et vos dates</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-wallet-off"></i></div>
+          <div><strong style="color:var(--text)">Coûts réduits</strong> — artistes amateurs gratuits ou pros à tarif direct, sans intermédiaire</div>
+        </li>
+        <li class="feat-item">
+          <div class="feat-icon"><i class="ti ti-shield-check"></i></div>
+          <div><strong style="color:var(--text)">Artistes vérifiés</strong> — avis, démo audio, historique de prestations</div>
+        </li>
+      </ul>
+      <a href="/signup?role=etablissement" class="dual-cta">Inscrire mon établissement <i class="ti ti-arrow-right" style="font-size:14px"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section reveal">
+  <div class="section-badge badge-b"><i class="ti ti-message-2"></i> Ils en parlent déjà</div>
+  <h2 class="section-title">Les premiers retours</h2>
+  <p class="section-sub">Artistes et établissements de la Côte d'Azur testent Setly en avant-première.</p>
+  <div class="testimonials">
+    <div class="testi">
+      <div class="testi-quote">"En 3 ans de mix dans ma chambre, j'ai jamais trouvé une scène. Avec Setly, en une semaine j'avais mon premier set dans un bar à Cannes."</div>
+      <div class="testi-author">
+        <div class="testi-avatar y">🎧</div>
+        <div><div class="testi-name">DJ Milo</div><div class="testi-role">DJ Techno · Cannes</div></div>
+      </div>
+    </div>
+    <div class="testi">
+      <div class="testi-quote">"On payait 500€ un DJ pro le samedi soir. Avec Setly, on a trouvé un artiste motivé, gratuit, et le bar était plein. Game changer."</div>
+      <div class="testi-author">
+        <div class="testi-avatar b">🍸</div>
+        <div><div class="testi-name">Margaux R.</div><div class="testi-role">Gérante · Le Zinc, Cannes</div></div>
+      </div>
+    </div>
+    <div class="testi">
+      <div class="testi-quote">"L'import Google m'a pris 30 secondes. Pas de photos à uploader, pas de formulaire interminable. J'ai publié ma fiche entre deux services."</div>
+      <div class="testi-author">
+        <div class="testi-avatar b">🍽️</div>
+        <div><div class="testi-name">Thomas K.</div><div class="testi-role">Patron · Café de la Plage, Nice</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL — SEGMENTED -->
+<section class="final-cta reveal" id="rejoindre">
+  <div class="form-header" id="form-header-artiste">
+    <div class="form-header-emoji">🎧</div>
+    <h2 class="final-title">Créez votre profil<br><span style="color:var(--accent)">artiste</span></h2>
+    <p class="final-sub-intro">Rejoignez les premiers artistes sur Setly — c'est gratuit et ça prend 30 secondes</p>
+  </div>
+  <div class="form-header" id="form-header-venue" style="display:none;">
+    <div class="form-header-emoji">🍸</div>
+    <h2 class="final-title">Inscrivez votre<br><span style="color:var(--blue)">établissement</span></h2>
+    <p class="final-sub-intro">Import automatique depuis Google — votre fiche est prête en un clic</p>
+  </div>
+
+  <!-- Role toggle -->
+  <div class="role-toggle">
+    <button class="role-tab active" data-tab="artiste"><i class="ti ti-microphone-2"></i> Artiste</button>
+    <button class="role-tab" data-tab="venue"><i class="ti ti-building-store"></i> Établissement</button>
+    <div class="role-slider"></div>
+  </div>
+
+  <!-- ARTIST FORM -->
+  <div class="signup-panel active" id="panel-artiste">
+    <div class="panel-glow artist-glow"></div>
+    <div class="panel-header">
+      <div class="panel-emoji">🎧</div>
+      <div>
+        <div class="panel-title">Inscription artiste</div>
+        <div class="panel-hint">Obtenez le badge Ambassadeur — profil mis en avant à vie</div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Nom de scène</label>
+        <input type="text" placeholder="Ex : DJ Milo" />
+      </div>
+      <div class="form-field">
+        <label>Ville</label>
+        <input type="text" placeholder="Ex : Cannes" />
+      </div>
+    </div>
+    <div class="form-field full">
+      <label>Email</label>
+      <input type="email" placeholder="votre@email.com" class="email-art" />
+    </div>
+    <div class="form-field full">
+      <label>Mot de passe</label>
+      <div class="pw-field">
+        <input type="password" placeholder="8 caractères minimum" class="pw-art" />
+        <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+      </div>
+    </div>
+    <div class="form-field full">
+      <label>Confirmer le mot de passe</label>
+      <div class="pw-field">
+        <input type="password" placeholder="Retapez votre mot de passe" class="pw-confirm" />
+        <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+      </div>
+      <div class="pw-match-error" style="display:none"><i class="ti ti-alert-circle"></i> Les mots de passe ne correspondent pas</div>
+      <div class="pw-hint"><i class="ti ti-shield-check"></i> Votre compte sera créé automatiquement à l'inscription</div>
+    </div>
+    <div class="form-field full">
+      <label>Type d'artiste</label>
+      <div class="chip-row" id="artist-type-row">
+        <span class="f-chip artist-type-chip" data-v="DJ">🎧 DJ</span>
+        <span class="f-chip artist-type-chip" data-v="Chanteur">🎤 Chanteur</span>
+        <span class="f-chip artist-type-chip" data-v="Musicien">🎸 Musicien</span>
+        <span class="f-chip artist-type-chip" data-v="Groupe">🎵 Groupe</span>
+        <span class="f-chip artist-type-chip" data-v="Beatmaker">🥁 Beatmaker</span>
+      </div>
+    </div>
+    <div class="form-field full subcat-section" id="subcat-section" style="display:none;">
+      <label id="subcat-label">Style musical</label>
+      <div class="chip-row subcat-chips" id="subcat-chips"></div>
+      <div class="subcat-hint"><i class="ti ti-info-circle"></i> Sélectionnez un ou plusieurs styles — les établissements filtrent par genre</div>
+    </div>
+    <div class="form-field full">
+      <label>Lien mix / démo</label>
+      <div class="social-input">
+        <div class="social-prefix sc"><i class="ti ti-brand-soundcloud"></i></div>
+        <input type="text" placeholder="soundcloud.com/ton-profil" />
+      </div>
+    </div>
+    <div class="form-field full">
+      <label>Réseaux sociaux</label>
+      <div class="social-stack">
+        <div class="social-input">
+          <div class="social-prefix ig"><i class="ti ti-brand-instagram"></i></div>
+          <input type="text" placeholder="@ton_pseudo" />
+        </div>
+        <div class="social-input">
+          <div class="social-prefix tt"><i class="ti ti-brand-tiktok"></i></div>
+          <input type="text" placeholder="@ton_pseudo" />
+        </div>
+        <div class="social-input">
+          <div class="social-prefix yt"><i class="ti ti-brand-youtube"></i></div>
+          <input type="text" placeholder="youtube.com/@ta-chaine" />
+        </div>
+        <div class="social-input">
+          <div class="social-prefix sp"><i class="ti ti-brand-spotify"></i></div>
+          <input type="text" placeholder="open.spotify.com/artist/..." />
+        </div>
+      </div>
+      <div class="social-hint"><i class="ti ti-info-circle"></i> Tous optionnels — au moins un réseau aide à crédibiliser votre profil</div>
+    </div>
+    <button class="submit-btn accent-btn" data-type="artiste"><i class="ti ti-sparkles"></i> Réserver ma place</button>
+    <div class="form-note">Gratuit · 50 places Ambassadeur restantes · Lancement été 2026</div>
+  </div>
+
+  <!-- VENUE FORM -->
+  <div class="signup-panel" id="panel-venue">
+    <div class="panel-glow venue-glow"></div>
+
+    <!-- STEP 1: Google Search -->
+    <div id="venue-step1">
+      <div class="panel-header">
+        <div class="panel-emoji">🍸</div>
+        <div>
+          <div class="panel-title">Trouvez votre établissement</div>
+          <div class="panel-hint">Tapez le nom — on importe tout depuis Google</div>
+        </div>
+      </div>
+
+      <div class="g-search-wrap">
+        <div class="g-search-bar" id="g-search-bar">
+          <i class="ti ti-search"></i>
+          <input type="text" id="g-search-input" placeholder="Nom de votre établissement + ville" autocomplete="off" />
+          <div class="g-spinner" id="g-spinner"></div>
+        </div>
+        <div class="g-results" id="g-results"></div>
+      </div>
+
+      <div class="g-manual-link" id="g-manual-link">
+        <i class="ti ti-edit"></i> Mon établissement n'est pas sur Google — saisie manuelle
+      </div>
+    </div>
+
+    <!-- STEP 2: Imported + complete -->
+    <div id="venue-step2" style="display:none;">
+      <div class="panel-header">
+        <div class="panel-emoji">✅</div>
+        <div>
+          <div class="panel-title">Infos importées depuis Google</div>
+          <div class="panel-hint">Vérifiez et complétez pour publier votre fiche</div>
+        </div>
+      </div>
+
+      <div class="g-imported-card" id="g-imported-card"></div>
+
+      <div class="form-field full" style="margin-top:14px;">
+        <label>Email professionnel</label>
+        <input type="email" placeholder="contact@votre-bar.fr" class="email-ven" />
+      </div>
+      <div class="form-field full">
+        <label>Mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="8 caractères minimum" class="pw-ven" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+      </div>
+      <div class="form-field full">
+        <label>Confirmer le mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="Retapez votre mot de passe" class="pw-confirm" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+        <div class="pw-match-error" style="display:none"><i class="ti ti-alert-circle"></i> Les mots de passe ne correspondent pas</div>
+        <div class="pw-hint" style="color:var(--blue)"><i class="ti ti-shield-check" style="color:var(--blue)"></i> Votre compte sera créé automatiquement à l'inscription</div>
+      </div>
+      <div class="form-field full">
+        <label>Contact interne</label>
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="form-field">
+            <input type="text" placeholder="Nom & prénom" />
+          </div>
+          <div class="form-field">
+            <input type="tel" placeholder="06 XX XX XX XX" />
+          </div>
+        </div>
+        <div class="contact-hint"><i class="ti ti-lock"></i> Visible uniquement par l'équipe Setly, jamais par les artistes</div>
+      </div>
+      <div class="form-field full">
+        <label>Type d'établissement</label>
+        <div class="chip-row">
+          <span class="f-chip" data-v="Bar">Bar</span>
+          <span class="f-chip" data-v="Café">Café</span>
+          <span class="f-chip" data-v="Restaurant">Restaurant</span>
+          <span class="f-chip" data-v="Club">Club</span>
+          <span class="f-chip" data-v="Rooftop">Rooftop</span>
+          <span class="f-chip" data-v="Pop-up">Pop-up</span>
+        </div>
+      </div>
+      <button class="submit-btn blue-btn" data-type="venue"><i class="ti ti-sparkles"></i> Inscrire mon établissement</button>
+      <div class="form-note">Gratuit · Import Google en 1 clic · Lancement été 2026</div>
+    </div>
+
+    <!-- STEP MANUAL (fallback) -->
+    <div id="venue-manual" style="display:none;">
+      <div class="panel-header">
+        <div class="panel-emoji">🍸</div>
+        <div>
+          <div class="panel-title">Inscription manuelle</div>
+          <div class="panel-hint">Remplissez les infos de votre établissement</div>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Nom de l'établissement</label>
+          <input type="text" placeholder="Ex : Le Zinc" />
+        </div>
+        <div class="form-field">
+          <label>Ville</label>
+          <input type="text" placeholder="Ex : Cannes" />
+        </div>
+      </div>
+      <div class="form-field full">
+        <label>Adresse</label>
+        <input type="text" placeholder="12 rue d'Antibes, 06400 Cannes" />
+      </div>
+      <div class="form-field full">
+        <label>Site internet (optionnel)</label>
+        <input type="text" placeholder="www.votre-bar.fr" />
+      </div>
+      <div class="form-field full">
+        <label>Email professionnel</label>
+        <input type="email" placeholder="contact@votre-bar.fr" class="email-ven" />
+      </div>
+      <div class="form-field full">
+        <label>Mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="8 caractères minimum" class="pw-ven" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+      </div>
+      <div class="form-field full">
+        <label>Confirmer le mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="Retapez votre mot de passe" class="pw-confirm" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+        <div class="pw-match-error" style="display:none"><i class="ti ti-alert-circle"></i> Les mots de passe ne correspondent pas</div>
+        <div class="pw-hint" style="color:var(--blue)"><i class="ti ti-shield-check" style="color:var(--blue)"></i> Votre compte sera créé automatiquement à l'inscription</div>
+      </div>
+      <div class="form-field full">
+        <label>Contact interne</label>
+        <div class="form-grid" style="margin-bottom:0">
+          <div class="form-field">
+            <input type="text" placeholder="Nom & prénom" />
+          </div>
+          <div class="form-field">
+            <input type="tel" placeholder="06 XX XX XX XX" />
+          </div>
+        </div>
+        <div class="contact-hint"><i class="ti ti-lock"></i> Visible uniquement par l'équipe Setly, jamais par les artistes</div>
+      </div>
+      <div class="form-field full">
+        <label>Photos de l'établissement</label>
+        <div class="photo-upload-zone" id="photo-zone-manual">
+          <div class="photo-dropzone" id="dropzone-manual">
+            <i class="ti ti-cloud-upload"></i>
+            <div class="drop-title">Glissez vos photos ici</div>
+            <div class="drop-or">ou</div>
+            <label class="drop-btn">
+              <i class="ti ti-photo-plus"></i> Parcourir
+              <input type="file" multiple accept="image/*" style="display:none" id="file-input-manual" />
+            </label>
+            <div class="drop-hint">JPG ou PNG · 5 Mo max · 3 photos minimum recommandées</div>
+          </div>
+          <div class="photo-preview-row" id="preview-row-manual"></div>
+        </div>
+      </div>
+      <div class="form-field full">
+        <label>Type d'établissement</label>
+        <div class="chip-row">
+          <span class="f-chip" data-v="Bar">Bar</span>
+          <span class="f-chip" data-v="Café">Café</span>
+          <span class="f-chip" data-v="Restaurant">Restaurant</span>
+          <span class="f-chip" data-v="Club">Club</span>
+          <span class="f-chip" data-v="Rooftop">Rooftop</span>
+          <span class="f-chip" data-v="Pop-up">Pop-up</span>
+        </div>
+      </div>
+      <button class="submit-btn blue-btn" data-type="venue"><i class="ti ti-sparkles"></i> Inscrire mon établissement</button>
+      <div class="form-note">Gratuit · Lancement été 2026</div>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <div class="modal-close" id="modal-close"><i class="ti ti-x"></i></div>
+    
+    <!-- LOGIN VIEW -->
+    <div id="modal-login">
+      <div class="modal-logo">Set<span>ly</span></div>
+      <div class="modal-subtitle">Connectez-vous à votre compte</div>
+      <div class="modal-field">
+        <label>Email</label>
+        <input type="email" placeholder="votre@email.com" id="login-email" />
+      </div>
+      <div class="modal-field">
+        <label>Mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="••••••••" id="login-password" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+      </div>
+      <div class="modal-forgot"><a id="forgot-link">Mot de passe oublié ?</a></div>
+      <button class="modal-btn" id="login-btn">Se connecter</button>
+      <div class="modal-divider"><span>Pas encore inscrit ?</span></div>
+      <div class="modal-switch"><a id="switch-to-signup">Créer un compte gratuitement</a></div>
+    </div>
+
+    <!-- SIGNUP VIEW -->
+    <div id="modal-signup" style="display:none;">
+      <div class="modal-logo">Set<span>ly</span></div>
+      <div class="modal-subtitle">Créez votre compte Setly</div>
+      <div class="modal-field">
+        <label>Je suis</label>
+        <div class="chip-row" style="margin-bottom:0">
+          <span class="f-chip modal-role" data-v="artiste" style="flex:1;text-align:center;padding:10px;font-size:13px;">🎧 Artiste</span>
+          <span class="f-chip modal-role" data-v="venue" style="flex:1;text-align:center;padding:10px;font-size:13px;">🍸 Établissement</span>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Email</label>
+        <input type="email" placeholder="votre@email.com" id="signup-email" />
+      </div>
+      <div class="modal-field">
+        <label>Mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="8 caractères minimum" id="signup-password" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Confirmer le mot de passe</label>
+        <div class="pw-field">
+          <input type="password" placeholder="Retapez votre mot de passe" id="signup-password-confirm" />
+          <span class="pw-toggle" tabindex="0"><i class="ti ti-eye"></i></span>
+        </div>
+        <div class="pw-match-error" style="display:none"><i class="ti ti-alert-circle"></i> Les mots de passe ne correspondent pas</div>
+      </div>
+      <button class="modal-btn" id="signup-btn">Créer mon compte</button>
+      <div class="modal-divider"><span>Déjà inscrit ?</span></div>
+      <div class="modal-switch"><a id="switch-to-login">Se connecter</a></div>
+    </div>
+
+    <!-- FORGOT VIEW -->
+    <div id="modal-forgot" style="display:none;">
+      <div class="modal-logo">Set<span>ly</span></div>
+      <div class="modal-subtitle">Réinitialiser votre mot de passe</div>
+      <div class="modal-field">
+        <label>Email</label>
+        <input type="email" placeholder="votre@email.com" id="forgot-email" />
+      </div>
+      <button class="modal-btn" id="forgot-btn">Envoyer le lien</button>
+      <div class="modal-divider"><span>Retour</span></div>
+      <div class="modal-switch"><a id="back-to-login">Se connecter</a></div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="modal-success" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);">Compte créé !</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">Vous recevrez un email de confirmation au lancement.<br>Bienvenue dans Setly !</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Set<span>ly</span></div>
+    <div class="footer-links">
+      <a href="#">À propos</a>
+      <a href="#">Contact</a>
+      <a href="#">CGU</a>
+      <a href="#">Confidentialité</a>
+    </div>
+    <div class="footer-copy">© 2026 Setly. Tous droits réservés.</div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.15 });
+reveals.forEach(el => observer.observe(el));
+
+// Smooth anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+});
+
+// Role toggle tabs
+const tabs = document.querySelectorAll('.role-tab');
+const toggle = document.querySelector('.role-toggle');
+const panels = document.querySelectorAll('.signup-panel');
+
+function switchRole(role) {
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === role));
+  toggle.classList.toggle('venue-active', role === 'venue');
+  panels.forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + role);
+  });
+  document.getElementById('form-header-artiste').style.display = role === 'artiste' ? '' : 'none';
+  document.getElementById('form-header-venue').style.display = role === 'venue' ? '' : 'none';
+  // Reset venue steps
+  if (role === 'venue') {
+    document.getElementById('venue-step1').style.display = '';
+    document.getElementById('venue-step2').style.display = 'none';
+    document.getElementById('venue-manual').style.display = 'none';
+  }
+}
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => switchRole(tab.dataset.tab));
+});
+
+// Role links from hero & dual sections
+document.querySelectorAll('.role-link').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const role = link.dataset.role;
+    switchRole(role);
+    document.querySelector('#rejoindre').scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+});
+
+// Chip toggles (exclude artist type chips — handled separately)
+document.querySelectorAll('.f-chip:not(.artist-type-chip):not(.subcat-chip):not(.modal-role)').forEach(chip => {
+  chip.addEventListener('click', () => chip.classList.toggle('on'));
+});
+
+// Password visibility toggles
+document.querySelectorAll('.pw-toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    const input = toggle.parentElement.querySelector('input');
+    const icon = toggle.querySelector('i');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'ti ti-eye-off'; }
+    else { input.type = 'password'; icon.className = 'ti ti-eye'; }
+  });
+});
+
+// === LOGIN MODAL ===
+const modal = document.getElementById('login-modal');
+const modalClose = document.getElementById('modal-close');
+const navLoginBtn = document.getElementById('nav-login-btn');
+const modalLogin = document.getElementById('modal-login');
+const modalSignup = document.getElementById('modal-signup');
+const modalForgot = document.getElementById('modal-forgot');
+const modalSuccess = document.getElementById('modal-success');
+
+function showView(view) {
+  [modalLogin, modalSignup, modalForgot, modalSuccess].forEach(v => v.style.display = 'none');
+  view.style.display = '';
+}
+
+navLoginBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  modal.classList.add('show');
+  showView(modalLogin);
+});
+
+modalClose.addEventListener('click', () => modal.classList.remove('show'));
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+
+document.getElementById('switch-to-signup').addEventListener('click', () => showView(modalSignup));
+document.getElementById('switch-to-login').addEventListener('click', () => showView(modalLogin));
+document.getElementById('forgot-link').addEventListener('click', () => showView(modalForgot));
+document.getElementById('back-to-login').addEventListener('click', () => showView(modalLogin));
+
+// Role chips in signup
+document.querySelectorAll('.modal-role').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.modal-role').forEach(c => c.classList.remove('on'));
+    chip.classList.add('on');
+  });
+});
+
+// Login submit
+document.getElementById('login-btn').addEventListener('click', () => {
+  const email = document.getElementById('login-email').value;
+  const pw = document.getElementById('login-password').value;
+  const pwField = document.getElementById('login-password').closest('.pw-field');
+  if (!email.includes('@') || pw.length < 1) {
+    document.getElementById('login-email').style.borderColor = email.includes('@') ? '' : '#f87171';
+    if (pw.length < 1) pwField.style.borderColor = '#f87171';
+    setTimeout(() => {
+      document.getElementById('login-email').style.borderColor = '';
+      pwField.style.borderColor = '';
+    }, 1500);
+    return;
+  }
+  showView(modalSuccess);
+  modalSuccess.querySelector('div:nth-child(2)').textContent = 'Connecté !';
+  modalSuccess.querySelector('div:nth-child(3)').innerHTML = 'Redirection vers votre espace...<br>Bientôt disponible au lancement.';
+});
+
+// Signup submit
+document.getElementById('signup-btn').addEventListener('click', () => {
+  const email = document.getElementById('signup-email').value;
+  const pw = document.getElementById('signup-password').value;
+  const pwConfirm = document.getElementById('signup-password-confirm').value;
+  const pwField = document.getElementById('signup-password').closest('.pw-field');
+  const pwConfirmField = document.getElementById('signup-password-confirm').closest('.pw-field');
+  const matchError = pwConfirmField.parentElement.querySelector('.pw-match-error');
+  const role = document.querySelector('.modal-role.on');
+  let valid = true;
+  matchError.style.display = 'none';
+  if (!email.includes('@')) { document.getElementById('signup-email').style.borderColor = '#f87171'; valid = false; }
+  if (pw.length < 8) { pwField.style.borderColor = '#f87171'; valid = false; }
+  if (pw !== pwConfirm || pwConfirm.length === 0) { pwConfirmField.style.borderColor = '#f87171'; matchError.style.display = 'flex'; valid = false; }
+  if (!role) { valid = false; }
+  if (!valid) {
+    setTimeout(() => {
+      document.getElementById('signup-email').style.borderColor = '';
+      pwField.style.borderColor = '';
+      pwConfirmField.style.borderColor = '';
+    }, 2000);
+    return;
+  }
+  showView(modalSuccess);
+});
+
+// Forgot submit
+document.getElementById('forgot-btn').addEventListener('click', () => {
+  const email = document.getElementById('forgot-email').value;
+  if (!email.includes('@')) {
+    document.getElementById('forgot-email').style.borderColor = '#f87171';
+    setTimeout(() => { document.getElementById('forgot-email').style.borderColor = ''; }, 1500);
+    return;
+  }
+  showView(modalSuccess);
+  modalSuccess.querySelector('div:nth-child(2)').textContent = 'Email envoyé !';
+  modalSuccess.querySelector('div:nth-child(3)').innerHTML = 'Vérifiez votre boîte mail pour<br>réinitialiser votre mot de passe.';
+});
+
+// === GOOGLE IMPORT SIMULATION ===
+const fakeVenues = [
+  { name: 'Le Zinc — Bar à vins', addr: '12 rue d\'Antibes, 06400 Cannes', rating: 4.3, reviews: 187, tel: '04 93 XX XX XX', site: 'www.lezinc-cannes.fr', hours: 'Mar–Dim · 18h–01h' },
+  { name: 'Le Comptoir Cannois', addr: '5 bd de la Croisette, 06400 Cannes', rating: 4.5, reviews: 312, tel: '04 93 XX XX XX', site: 'www.comptoircannois.fr', hours: 'Lun–Sam · 17h–00h' },
+  { name: 'Café de la Plage', addr: '22 bd Jean Hibert, 06210 Mandelieu', rating: 4.1, reviews: 94, tel: '04 92 XX XX XX', site: 'www.cafedelaplage.fr', hours: 'Tous les jours · 10h–23h' },
+  { name: 'Le Spot Lounge Bar', addr: '8 rue Meynadier, 06400 Cannes', rating: 4.6, reviews: 245, tel: '04 93 XX XX XX', site: '', hours: 'Mer–Dim · 19h–02h' },
+  { name: 'La Terrazza', addr: '15 quai Saint-Pierre, 06400 Cannes', rating: 4.4, reviews: 178, tel: '04 93 XX XX XX', site: 'www.laterrazza-cannes.com', hours: 'Mar–Sam · 18h–01h' },
+];
+
+const gInput = document.getElementById('g-search-input');
+const gResults = document.getElementById('g-results');
+const gSpinner = document.getElementById('g-spinner');
+const gSearchBar = document.getElementById('g-search-bar');
+const gManual = document.getElementById('g-manual-link');
+let searchTimeout;
+
+if (gInput) {
+  gInput.addEventListener('focus', () => gSearchBar.classList.add('focused'));
+  gInput.addEventListener('blur', () => { setTimeout(() => { gSearchBar.classList.remove('focused'); }, 200); });
+
+  gInput.addEventListener('input', () => {
+    const q = gInput.value.trim().toLowerCase();
+    clearTimeout(searchTimeout);
+    if (q.length < 2) { gResults.classList.remove('show'); gSpinner.classList.remove('show'); return; }
+    gSpinner.classList.add('show');
+    searchTimeout = setTimeout(() => {
+      gSpinner.classList.remove('show');
+      const matches = fakeVenues.filter(v => v.name.toLowerCase().includes(q) || v.addr.toLowerCase().includes(q));
+      const results = matches.length > 0 ? matches : fakeVenues.slice(0, 3);
+      gResults.innerHTML = results.map((v, i) => `
+        <div class="g-result-item" data-idx="${fakeVenues.indexOf(v)}">
+          <div class="g-result-pin"><i class="ti ti-map-pin"></i></div>
+          <div class="g-result-info">
+            <div class="g-result-name">${v.name}</div>
+            <div class="g-result-addr">${v.addr}</div>
+            <div class="g-result-rating">
+              <span class="g-result-stars">${'★'.repeat(Math.floor(v.rating))}${'☆'.repeat(5-Math.floor(v.rating))}</span>
+              <span class="g-result-score">${v.rating} · ${v.reviews} avis</span>
+            </div>
+          </div>
+          <i class="ti ti-chevron-right g-result-arrow"></i>
+        </div>
+      `).join('');
+      gResults.classList.add('show');
+
+      gResults.querySelectorAll('.g-result-item').forEach(item => {
+        item.addEventListener('click', () => selectVenue(fakeVenues[parseInt(item.dataset.idx)]));
+      });
+    }, 600);
+  });
+}
+
+function selectVenue(v) {
+  gResults.classList.remove('show');
+  document.getElementById('venue-step1').style.display = 'none';
+  document.getElementById('venue-step2').style.display = '';
+  const card = document.getElementById('g-imported-card');
+  card.innerHTML = `
+    <div class="g-imp-header"><i class="ti ti-brand-google"></i><span>Fiche Google importée</span><span class="g-imp-badge">Auto</span></div>
+    <div class="g-imp-row"><i class="ti ti-building-store"></i><span class="g-imp-label">Nom</span><span class="g-imp-val">${v.name}</span><i class="ti ti-check g-imp-check"></i></div>
+    <div class="g-imp-row"><i class="ti ti-map-pin"></i><span class="g-imp-label">Adresse</span><span class="g-imp-val">${v.addr}</span><i class="ti ti-check g-imp-check"></i></div>
+    <div class="g-imp-row"><i class="ti ti-phone"></i><span class="g-imp-label">Tél.</span><span class="g-imp-val">${v.tel}</span><i class="ti ti-check g-imp-check"></i></div>
+    ${v.site ? `<div class="g-imp-row"><i class="ti ti-world"></i><span class="g-imp-label">Site</span><span class="g-imp-val" style="color:var(--blue)">${v.site}</span><i class="ti ti-check g-imp-check"></i></div>` : ''}
+    <div class="g-imp-row"><i class="ti ti-clock"></i><span class="g-imp-label">Horaires</span><span class="g-imp-val">${v.hours}</span><i class="ti ti-check g-imp-check"></i></div>
+  `;
+}
+
+if (gManual) {
+  gManual.addEventListener('click', () => {
+    document.getElementById('venue-step1').style.display = 'none';
+    document.getElementById('venue-manual').style.display = '';
+  });
+}
+
+// Photo upload (manual form)
+const dropzone = document.getElementById('dropzone-manual');
+const fileInput = document.getElementById('file-input-manual');
+const previewRow = document.getElementById('preview-row-manual');
+
+if (dropzone) {
+  dropzone.addEventListener('click', (e) => { if (e.target === dropzone || !e.target.closest('.drop-btn')) fileInput.click(); });
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+}
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'photo-preview-thumb';
+      thumb.innerHTML = `<img src="${e.target.result}" alt="Photo" /><div class="photo-preview-remove"><i class="ti ti-x"></i></div>`;
+      thumb.querySelector('.photo-preview-remove').addEventListener('click', () => thumb.remove());
+      previewRow.appendChild(thumb);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// === DYNAMIC ARTIST SUBCATEGORIES ===
+const subcatData = {
+  DJ: ['House', 'Deep House', 'Techno', 'Hard Techno', 'Industrial', 'Raw', 'Bounce', 'Tech House', 'Minimal', 'Afro House', 'Melodic Techno', 'Trance', 'Drum & Bass', 'Disco', 'EDM', 'Amapiano'],
+  Chanteur: ['Pop', 'R&B', 'Jazz vocal', 'Soul', 'Variété française', 'Reggae', 'Gospel', 'Bossa Nova', 'Chanson française', 'Rap/Hip-Hop', 'Rock'],
+  Musicien: ['Jazz', 'Classique', 'Blues', 'Rock', 'Funk', 'World Music', 'Folk', 'Flamenco', 'Acoustique', 'Reggae', 'Latin'],
+  Groupe: ['Rock', 'Pop-Rock', 'Indie', 'Metal', 'Jazz Band', 'Funk', 'Reggae', 'Cover Band', 'Acoustique', 'Électro-live', 'Ska'],
+  Beatmaker: ['Hip-Hop', 'Trap', 'Lo-Fi', 'Boom Bap', 'Drill', 'Afrobeat', 'R&B', 'Cloud Rap', 'Instrumental', 'Électro']
+};
+
+const typeRow = document.getElementById('artist-type-row');
+const subcatSection = document.getElementById('subcat-section');
+const subcatChips = document.getElementById('subcat-chips');
+const subcatLabel = document.getElementById('subcat-label');
+
+if (typeRow) {
+  typeRow.querySelectorAll('.artist-type-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      // Toggle type selection (single select)
+      const wasOn = chip.classList.contains('on');
+      typeRow.querySelectorAll('.artist-type-chip').forEach(c => c.classList.remove('on'));
+      
+      if (wasOn) {
+        // Deselect — hide subcategories
+        subcatSection.style.display = 'none';
+        subcatChips.innerHTML = '';
+      } else {
+        // Select — show subcategories
+        chip.classList.add('on');
+        const type = chip.dataset.v;
+        const styles = subcatData[type] || [];
+        subcatLabel.textContent = `Styles — ${type}`;
+        subcatChips.innerHTML = styles.map(s => 
+          `<span class="f-chip subcat-chip" data-v="${s}">${s}</span>`
+        ).join('');
+        subcatSection.style.display = '';
+        
+        // Bind subcategory chip toggles
+        subcatChips.querySelectorAll('.subcat-chip').forEach(sc => {
+          sc.addEventListener('click', () => sc.classList.toggle('on'));
+        });
+      }
+    });
+  });
+}
+
+// Submit buttons (with password + confirm validation)
+document.querySelectorAll('.submit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const panel = btn.closest('.signup-panel');
+    if (!panel) return;
+    const section = btn.closest('[id^="venue-"]') || panel;
+    const emailInput = section.querySelector('input[type="email"]');
+    const pwField = section.querySelector('.pw-field');
+    const pwInput = pwField ? pwField.querySelector('input') : null;
+    const pwConfirmInput = section.querySelector('.pw-confirm');
+    const pwConfirmField = pwConfirmInput ? pwConfirmInput.closest('.pw-field') : null;
+    const matchError = pwConfirmField ? pwConfirmField.parentElement.querySelector('.pw-match-error') : null;
+
+    let valid = true;
+    if (matchError) matchError.style.display = 'none';
+
+    if (emailInput && (!emailInput.value || !emailInput.value.includes('@'))) {
+      emailInput.style.borderColor = '#f87171';
+      setTimeout(() => { emailInput.style.borderColor = ''; }, 2000);
+      if (valid) emailInput.focus();
+      valid = false;
+    }
+    if (pwInput && pwInput.value.length < 8) {
+      pwField.style.borderColor = '#f87171';
+      setTimeout(() => { pwField.style.borderColor = ''; }, 2000);
+      if (valid) pwInput.focus();
+      valid = false;
+    }
+    if (pwInput && pwConfirmInput && (pwInput.value !== pwConfirmInput.value || pwConfirmInput.value.length === 0)) {
+      if (pwConfirmField) pwConfirmField.style.borderColor = '#f87171';
+      if (matchError) matchError.style.display = 'flex';
+      setTimeout(() => { if (pwConfirmField) pwConfirmField.style.borderColor = ''; }, 2000);
+      valid = false;
+    }
+    if (!valid) return;
+
+    const type = btn.dataset.type;
+    const isArtist = type === 'artiste';
+    section.innerHTML = `
+      <div style="text-align:center;padding:24px 0;">
+        <div style="font-size:48px;margin-bottom:12px;">${isArtist ? '🎉' : '🏆'}</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);">${isArtist ? 'Compte créé — bienvenue !' : 'Compte établissement créé !'}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">${isArtist
+          ? 'Votre badge Ambassadeur est activé.<br>Connectez-vous avec votre email et mot de passe dès le lancement.'
+          : 'Votre fiche est prête.<br>Connectez-vous avec votre email et mot de passe pour la gérer.'}</div>
+      </div>
+    `;
+  });
+});
+</script>
+</body>
+</html>
