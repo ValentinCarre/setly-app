@@ -2,55 +2,77 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
-
+ 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
-
+ 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
-        supabase.from('profiles').select('*').eq('id', user.id).single()
-          .then(({ data }) => setProfile(data));
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        setProfile(prof);
+ 
+        // Fetch display name from artiste or etablissement table
+        if (prof?.role === 'artiste') {
+          const { data: art } = await supabase.from('artistes').select('nom_scene').eq('id', user.id).single();
+          setDisplayName(art?.nom_scene || '');
+        } else if (prof?.role === 'etablissement') {
+          const { data: etab } = await supabase.from('etablissements').select('nom').eq('id', user.id).single();
+          setDisplayName(etab?.nom || '');
+        }
       }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        supabase.from('profiles').select('*').eq('id', session.user.id).single()
-          .then(({ data }) => setProfile(data));
+    }
+    loadUser();
+ 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user || null;
+      setUser(u);
+      if (u) {
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', u.id).single();
+        setProfile(prof);
+        if (prof?.role === 'artiste') {
+          const { data: art } = await supabase.from('artistes').select('nom_scene').eq('id', u.id).single();
+          setDisplayName(art?.nom_scene || '');
+        } else if (prof?.role === 'etablissement') {
+          const { data: etab } = await supabase.from('etablissements').select('nom').eq('id', u.id).single();
+          setDisplayName(etab?.nom || '');
+        }
       } else {
         setProfile(null);
+        setDisplayName('');
       }
     });
-
+ 
     return () => subscription.unsubscribe();
   }, []);
-
+ 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setDisplayName('');
     setMenuOpen(false);
     window.location.href = '/';
   };
-
+ 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5" style={{ background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(20px)' }}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="font-display text-2xl font-extrabold tracking-tight">
           Set<span className="text-accent">ly</span>
         </Link>
-
+ 
         <div className="flex items-center gap-6">
           <Link href="/explorer" className="text-sm text-muted hover:text-white transition hidden md:block">
             Explorer
           </Link>
-
+ 
           {user ? (
             <div className="relative">
               <button
@@ -58,12 +80,12 @@ export default function Navbar() {
                 className="flex items-center gap-2 text-sm bg-bg-card border border-border rounded-lg px-3 py-2 hover:border-muted transition"
               >
                 <span className="text-lg">{profile?.role === 'artiste' ? '🎧' : '🍸'}</span>
-                <span className="text-muted hidden sm:block">{user.email?.split('@')[0]}</span>
+                <span className="text-muted hidden sm:block">{displayName || user.email?.split('@')[0]}</span>
                 <svg className={`w-3 h-3 text-dim transition ${menuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-
+ 
               {menuOpen && (
                 <div className="absolute right-0 top-12 w-56 bg-bg-card border border-border rounded-xl p-2 animate-fade-up shadow-xl">
                   <Link
@@ -120,3 +142,4 @@ export default function Navbar() {
     </nav>
   );
 }
+ 
