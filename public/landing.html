@@ -579,7 +579,7 @@ footer{border-top:1px solid var(--border);padding:40px 2rem;text-align:center}
       </div>
       <div class="social-hint"><i class="ti ti-info-circle"></i> Tous optionnels — au moins un réseau aide à crédibiliser votre profil</div>
     </div>
-    <button class="submit-btn accent-btn" data-type="artiste"><i class="ti ti-sparkles"></i> Réserver ma place</button>
+    <button class="submit-btn accent-btn" data-type="artiste"><i class="ti ti-sparkles"></i> S'inscrire</button>
     <div class="form-note">Gratuit · 50 places Ambassadeur restantes · Lancement été 2026</div>
   </div>
 
@@ -859,7 +859,9 @@ footer{border-top:1px solid var(--border);padding:40px 2rem;text-align:center}
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+(async function() {
 // Scroll reveal
 const reveals = document.querySelectorAll('.reveal');
 const observer = new IntersectionObserver((entries) => {
@@ -1093,13 +1095,96 @@ if (typeRow) {
   });
 }
 
-// Submit buttons — redirect to real app signup
+// Submit buttons — artiste creates real account, venue redirects
+const supabaseConfig = await fetch('/api/config').then(r => r.json()).catch(() => null);
+let sbClient = null;
+
+if (supabaseConfig && window.supabase) {
+  sbClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+}
+
 document.querySelectorAll('.submit-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const type = btn.dataset.type;
-    window.location.href = type === 'artiste' ? '/signup?role=artiste' : '/signup?role=etablissement';
+
+    if (type !== 'artiste' || !sbClient) {
+      window.location.href = type === 'artiste' ? '/signup?role=artiste' : '/signup?role=etablissement';
+      return;
+    }
+
+    // Get form data from artist panel
+    const panel = btn.closest('.signup-panel');
+    const emailInput = panel.querySelector('.email-art');
+    const pwField = panel.querySelector('.pw-art');
+    const pwConfirm = panel.querySelector('.pw-confirm');
+    const nomInput = panel.querySelector('input[placeholder="Ex : DJ Milo"]');
+    const villeInput = panel.querySelector('input[placeholder="Ex : Cannes"]');
+
+    const email = emailInput?.value?.trim();
+    const pw = pwField?.value;
+    const pwC = pwConfirm?.value;
+    const nom = nomInput?.value?.trim();
+    const ville = villeInput?.value?.trim();
+
+    // Get selected type
+    const activeType = document.querySelector('.artist-type-chip.on');
+    const artistType = activeType?.dataset?.v || '';
+
+    // Get selected styles
+    const selectedStyles = [];
+    document.querySelectorAll('.subcat-chip.on').forEach(c => selectedStyles.push(c.dataset.v));
+
+    // Validation
+    if (!email || !email.includes('@')) { if (emailInput) emailInput.style.borderColor = '#f87171'; setTimeout(() => { if (emailInput) emailInput.style.borderColor = ''; }, 2000); return; }
+    if (!pw || pw.length < 8) { const f = pwField?.closest('.pw-field'); if (f) f.style.borderColor = '#f87171'; setTimeout(() => { if (f) f.style.borderColor = ''; }, 2000); return; }
+    if (pw !== pwC) { const f = pwConfirm?.closest('.pw-field'); if (f) f.style.borderColor = '#f87171'; const err = f?.parentElement?.querySelector('.pw-match-error'); if (err) err.style.display = 'flex'; setTimeout(() => { if (f) f.style.borderColor = ''; }, 2000); return; }
+    if (!nom) { if (nomInput) nomInput.style.borderColor = '#f87171'; setTimeout(() => { if (nomInput) nomInput.style.borderColor = ''; }, 2000); return; }
+
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#111;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Création du compte...';
+
+    try {
+      // Create auth account
+      const { data, error } = await sbClient.auth.signUp({ email, password: pw });
+      if (error) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-sparkles"></i> S\'inscrire';
+        alert(error.message === 'User already registered' ? 'Un compte existe déjà avec cet email' : error.message);
+        return;
+      }
+
+      const userId = data.user.id;
+
+      // Create profile
+      await sbClient.from('profiles').insert({ id: userId, role: 'artiste', onboarding_done: nom ? true : false });
+
+      // Create artiste entry if we have data
+      if (nom) {
+        await sbClient.from('artistes').upsert({
+          id: userId,
+          nom_scene: nom,
+          ville: ville || '',
+          type_artiste: artistType || 'DJ',
+          styles: selectedStyles,
+          bio: '',
+          photo_url: '',
+          soundcloud: '', instagram: '', tiktok: '', youtube: '', spotify: '',
+          disponibilites: [],
+        });
+      }
+
+      // Redirect to profile
+      window.location.href = '/profil';
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-sparkles"></i> S\'inscrire';
+      alert('Erreur lors de la création du compte. Réessayez.');
+    }
   });
 });
+})();
 </script>
 </body>
 </html>
