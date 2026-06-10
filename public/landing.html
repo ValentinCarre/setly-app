@@ -926,33 +926,12 @@ document.querySelectorAll('.pw-toggle').forEach(toggle => {
   });
 });
 
-// === LOGIN MODAL ===
+// Modal is no longer used for login — Connexion links directly to /login
 const modal = document.getElementById('login-modal');
 const modalClose = document.getElementById('modal-close');
-const navLoginBtn = document.getElementById('nav-login-btn');
-const modalLogin = document.getElementById('modal-login');
-const modalSignup = document.getElementById('modal-signup');
-const modalForgot = document.getElementById('modal-forgot');
-const modalSuccess = document.getElementById('modal-success');
 
-function showView(view) {
-  [modalLogin, modalSignup, modalForgot, modalSuccess].forEach(v => v.style.display = 'none');
-  view.style.display = '';
-}
-
-navLoginBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  modal.classList.add('show');
-  showView(modalLogin);
-});
-
-modalClose.addEventListener('click', () => modal.classList.remove('show'));
-modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
-
-document.getElementById('switch-to-signup').addEventListener('click', () => showView(modalSignup));
-document.getElementById('switch-to-login').addEventListener('click', () => showView(modalLogin));
-document.getElementById('forgot-link').addEventListener('click', () => showView(modalForgot));
-document.getElementById('back-to-login').addEventListener('click', () => showView(modalLogin));
+if (modalClose) modalClose.addEventListener('click', () => modal.classList.remove('show'));
+if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
 
 // Role chips in signup
 document.querySelectorAll('.modal-role').forEach(chip => {
@@ -962,62 +941,21 @@ document.querySelectorAll('.modal-role').forEach(chip => {
   });
 });
 
-// Login submit
+// Login submit — redirect to real app login
 document.getElementById('login-btn').addEventListener('click', () => {
-  const email = document.getElementById('login-email').value;
-  const pw = document.getElementById('login-password').value;
-  const pwField = document.getElementById('login-password').closest('.pw-field');
-  if (!email.includes('@') || pw.length < 1) {
-    document.getElementById('login-email').style.borderColor = email.includes('@') ? '' : '#f87171';
-    if (pw.length < 1) pwField.style.borderColor = '#f87171';
-    setTimeout(() => {
-      document.getElementById('login-email').style.borderColor = '';
-      pwField.style.borderColor = '';
-    }, 1500);
-    return;
-  }
-  showView(modalSuccess);
-  modalSuccess.querySelector('div:nth-child(2)').textContent = 'Connecté !';
-  modalSuccess.querySelector('div:nth-child(3)').innerHTML = 'Redirection vers votre espace...<br>Bientôt disponible au lancement.';
+  window.location.href = '/login';
 });
 
-// Signup submit
+// Signup submit — redirect to real app signup
 document.getElementById('signup-btn').addEventListener('click', () => {
-  const email = document.getElementById('signup-email').value;
-  const pw = document.getElementById('signup-password').value;
-  const pwConfirm = document.getElementById('signup-password-confirm').value;
-  const pwField = document.getElementById('signup-password').closest('.pw-field');
-  const pwConfirmField = document.getElementById('signup-password-confirm').closest('.pw-field');
-  const matchError = pwConfirmField.parentElement.querySelector('.pw-match-error');
   const role = document.querySelector('.modal-role.on');
-  let valid = true;
-  matchError.style.display = 'none';
-  if (!email.includes('@')) { document.getElementById('signup-email').style.borderColor = '#f87171'; valid = false; }
-  if (pw.length < 8) { pwField.style.borderColor = '#f87171'; valid = false; }
-  if (pw !== pwConfirm || pwConfirm.length === 0) { pwConfirmField.style.borderColor = '#f87171'; matchError.style.display = 'flex'; valid = false; }
-  if (!role) { valid = false; }
-  if (!valid) {
-    setTimeout(() => {
-      document.getElementById('signup-email').style.borderColor = '';
-      pwField.style.borderColor = '';
-      pwConfirmField.style.borderColor = '';
-    }, 2000);
-    return;
-  }
-  showView(modalSuccess);
+  const roleParam = role?.dataset.v === 'venue' ? 'etablissement' : 'artiste';
+  window.location.href = '/signup?role=' + roleParam;
 });
 
 // Forgot submit
 document.getElementById('forgot-btn').addEventListener('click', () => {
-  const email = document.getElementById('forgot-email').value;
-  if (!email.includes('@')) {
-    document.getElementById('forgot-email').style.borderColor = '#f87171';
-    setTimeout(() => { document.getElementById('forgot-email').style.borderColor = ''; }, 1500);
-    return;
-  }
-  showView(modalSuccess);
-  modalSuccess.querySelector('div:nth-child(2)').textContent = 'Email envoyé !';
-  modalSuccess.querySelector('div:nth-child(3)').innerHTML = 'Vérifiez votre boîte mail pour<br>réinitialiser votre mot de passe.';
+  window.location.href = '/login';
 });
 
 // === GOOGLE IMPORT SIMULATION ===
@@ -1073,24 +1011,12 @@ if (gInput) {
 }
 
 function selectVenue(v) {
-  gResults.classList.remove('show');
-  document.getElementById('venue-step1').style.display = 'none';
-  document.getElementById('venue-step2').style.display = '';
-  const card = document.getElementById('g-imported-card');
-  card.innerHTML = `
-    <div class="g-imp-header"><i class="ti ti-brand-google"></i><span>Fiche Google importée</span><span class="g-imp-badge">Auto</span></div>
-    <div class="g-imp-row"><i class="ti ti-building-store"></i><span class="g-imp-label">Nom</span><span class="g-imp-val">${v.name}</span><i class="ti ti-check g-imp-check"></i></div>
-    <div class="g-imp-row"><i class="ti ti-map-pin"></i><span class="g-imp-label">Adresse</span><span class="g-imp-val">${v.addr}</span><i class="ti ti-check g-imp-check"></i></div>
-    <div class="g-imp-row"><i class="ti ti-phone"></i><span class="g-imp-label">Tél.</span><span class="g-imp-val">${v.tel}</span><i class="ti ti-check g-imp-check"></i></div>
-    ${v.site ? `<div class="g-imp-row"><i class="ti ti-world"></i><span class="g-imp-label">Site</span><span class="g-imp-val" style="color:var(--blue)">${v.site}</span><i class="ti ti-check g-imp-check"></i></div>` : ''}
-    <div class="g-imp-row"><i class="ti ti-clock"></i><span class="g-imp-label">Horaires</span><span class="g-imp-val">${v.hours}</span><i class="ti ti-check g-imp-check"></i></div>
-  `;
+  window.location.href = '/signup?role=etablissement';
 }
 
 if (gManual) {
   gManual.addEventListener('click', () => {
-    document.getElementById('venue-step1').style.display = 'none';
-    document.getElementById('venue-manual').style.display = '';
+    window.location.href = '/signup?role=etablissement';
   });
 }
 
@@ -1167,53 +1093,11 @@ if (typeRow) {
   });
 }
 
-// Submit buttons (with password + confirm validation)
+// Submit buttons — redirect to real app signup
 document.querySelectorAll('.submit-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const panel = btn.closest('.signup-panel');
-    if (!panel) return;
-    const section = btn.closest('[id^="venue-"]') || panel;
-    const emailInput = section.querySelector('input[type="email"]');
-    const pwField = section.querySelector('.pw-field');
-    const pwInput = pwField ? pwField.querySelector('input') : null;
-    const pwConfirmInput = section.querySelector('.pw-confirm');
-    const pwConfirmField = pwConfirmInput ? pwConfirmInput.closest('.pw-field') : null;
-    const matchError = pwConfirmField ? pwConfirmField.parentElement.querySelector('.pw-match-error') : null;
-
-    let valid = true;
-    if (matchError) matchError.style.display = 'none';
-
-    if (emailInput && (!emailInput.value || !emailInput.value.includes('@'))) {
-      emailInput.style.borderColor = '#f87171';
-      setTimeout(() => { emailInput.style.borderColor = ''; }, 2000);
-      if (valid) emailInput.focus();
-      valid = false;
-    }
-    if (pwInput && pwInput.value.length < 8) {
-      pwField.style.borderColor = '#f87171';
-      setTimeout(() => { pwField.style.borderColor = ''; }, 2000);
-      if (valid) pwInput.focus();
-      valid = false;
-    }
-    if (pwInput && pwConfirmInput && (pwInput.value !== pwConfirmInput.value || pwConfirmInput.value.length === 0)) {
-      if (pwConfirmField) pwConfirmField.style.borderColor = '#f87171';
-      if (matchError) matchError.style.display = 'flex';
-      setTimeout(() => { if (pwConfirmField) pwConfirmField.style.borderColor = ''; }, 2000);
-      valid = false;
-    }
-    if (!valid) return;
-
     const type = btn.dataset.type;
-    const isArtist = type === 'artiste';
-    section.innerHTML = `
-      <div style="text-align:center;padding:24px 0;">
-        <div style="font-size:48px;margin-bottom:12px;">${isArtist ? '🎉' : '🏆'}</div>
-        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);">${isArtist ? 'Compte créé — bienvenue !' : 'Compte établissement créé !'}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.6;">${isArtist
-          ? 'Votre badge Ambassadeur est activé.<br>Connectez-vous avec votre email et mot de passe dès le lancement.'
-          : 'Votre fiche est prête.<br>Connectez-vous avec votre email et mot de passe pour la gérer.'}</div>
-      </div>
-    `;
+    window.location.href = type === 'artiste' ? '/signup?role=artiste' : '/signup?role=etablissement';
   });
 });
 </script>
