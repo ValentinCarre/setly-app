@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
  
@@ -11,12 +11,14 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const supabase = createClient();
  
-  async function loadUnread(userId) {
+  const refreshUnread = useCallback(async (userId) => {
+    if (!userId) return;
     const { count } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', userId).eq('read', false);
     setUnreadCount(count || 0);
-  }
+  }, []);
  
   useEffect(() => {
+    let interval;
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -30,10 +32,13 @@ export default function Navbar() {
           const { data: etab } = await supabase.from('etablissements').select('nom').eq('id', user.id).single();
           setDisplayName(etab?.nom || '');
         }
-        loadUnread(user.id);
-        // Poll for new messages every 15 seconds
-        const interval = setInterval(() => loadUnread(user.id), 15000);
-        return () => clearInterval(interval);
+        refreshUnread(user.id);
+        interval = setInterval(() => refreshUnread(user.id), 10000);
+ 
+        // Listen for instant refresh when messages are read
+        const handler = () => refreshUnread(user.id);
+        window.addEventListener('messages-read', handler);
+        return () => { window.removeEventListener('messages-read', handler); };
       }
     }
     loadUser();
@@ -51,11 +56,11 @@ export default function Navbar() {
           const { data: etab } = await supabase.from('etablissements').select('nom').eq('id', u.id).single();
           setDisplayName(etab?.nom || '');
         }
-        loadUnread(u.id);
+        refreshUnread(u.id);
       } else { setProfile(null); setDisplayName(''); setUnreadCount(0); }
     });
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => { subscription.unsubscribe(); if (interval) clearInterval(interval); };
+  }, [refreshUnread]);
  
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -69,17 +74,12 @@ export default function Navbar() {
         <Link href="/" className="font-display text-2xl font-extrabold tracking-tight">Set<span className="text-accent">ly</span></Link>
         <div className="flex items-center gap-6">
           <Link href="/explorer" className="text-sm text-muted hover:text-white transition hidden md:block">Explorer</Link>
- 
           {user ? (
             <div className="flex items-center gap-3">
-              {/* Messages icon with badge */}
               <Link href="/messages" className="relative w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center text-muted hover:text-white hover:border-dim transition">
                 💬
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-accent text-black text-[10px] font-bold rounded-full flex items-center justify-center px-1">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                )}
+                {unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-accent text-black text-[10px] font-bold rounded-full flex items-center justify-center px-1">{unreadCount > 9 ? '9+' : unreadCount}</span>}
               </Link>
- 
               <div className="relative">
                 <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-sm bg-bg-card border border-border rounded-lg px-3 py-2 hover:border-muted transition">
                   <span className="text-lg">{profile?.role === 'artiste' ? '🎧' : '🍸'}</span>
