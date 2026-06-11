@@ -197,7 +197,7 @@ export default function Explorer() {
                     {a.spotify && <a href={a.spotify.startsWith('http')?a.spotify:`https://${a.spotify}`} target="_blank" className="w-7 h-7 rounded-md bg-green-500/10 flex items-center justify-center text-xs hover:bg-green-500/20 transition">🎧</a>}
                   </div>
                 </div>
-                <button className="w-full mt-3 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition">📩 Contacter {a.nom_scene}</button>
+                <Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="w-full mt-3 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition block text-center">📩 Contacter {a.nom_scene}</Link>
               </div>
             ))}
           </div>
@@ -206,3 +206,4 @@ export default function Explorer() {
     </div>
   );
 }
+ 
