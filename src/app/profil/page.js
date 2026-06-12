@@ -105,7 +105,7 @@ function ArtistDashboard({data,user,completion,supabase}){
                     <div className="text-[11px] text-dim">{s.etablissements?.nom} · {s.etablissements?.ville}</div>
                     <div className="text-[10px] text-accent mt-0.5">📅 {formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin}{s.cachet&&` · ${s.cachet}€`}{s.nb_artistes&&s.nb_artistes>1&&` · ${s.nb_artistes} artistes`} {s.ambiance && `· ${s.ambiance}`}</div>
                   </div>
-                  <Link href={`/messages?to=${s.etablissement_id}&name=${encodeURIComponent(s.etablissements?.nom||'')}`} className="text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition flex-shrink-0">Postuler</Link>
+                  <PostulerButton soiree={s} supabase={supabase} userId={user.id} artistName={data.nom_scene} />
                 </div>
               ))}
             </div>
@@ -163,8 +163,26 @@ function ArtistDashboard({data,user,completion,supabase}){
  
 function VenueDashboard({data,user,completion,supabase}){
   const[soirees,setSoirees]=useState([]);const[loadingSoirees,setLoadingSoirees]=useState(true);
+  const[candidatures,setCandidatures]=useState([]);
+  const handleCandidature=async(id,newStatus)=>{
+    await supabase.from('demandes').update({status:newStatus}).eq('id',id);
+    if(newStatus==='accepted'){
+      const cand=candidatures.find(c=>c.id===id);
+      if(cand&&cand.soirees){
+        const{count}=await supabase.from('demandes').select('*',{count:'exact',head:true}).eq('soiree_id',cand.soiree_id).eq('status','accepted');
+        if((count||0)+1>=(cand.soirees.nb_artistes||1)){
+          await supabase.from('soirees').update({status:'confirmed'}).eq('id',cand.soiree_id);
+        }
+      }
+    }
+    setCandidatures(prev=>prev.map(c=>c.id===id?{...c,status:newStatus}:c));
+  };
   const deleteSoiree=async(id)=>{if(!confirm('Supprimer cette soirée ? Les demandes associées seront aussi supprimées.'))return;await supabase.from('demandes').delete().eq('soiree_id',id);await supabase.from('soirees').delete().eq('id',id);setSoirees(prev=>prev.filter(s=>s.id!==id));};
-  useEffect(()=>{async function load(){const{data:soirs}=await supabase.from('soirees').select('*').eq('etablissement_id',user.id).order('date_soiree',{ascending:true});const res=[];for(const s of(soirs||[])){const{data:dems}=await supabase.from('demandes').select('*, artistes:artiste_id(nom_scene, type_artiste, photo_url)').eq('soiree_id',s.id);res.push({...s,demandes:dems||[]});}setSoirees(res);setLoadingSoirees(false);}load();},[]);
+  useEffect(()=>{async function load(){const{data:soirs}=await supabase.from('soirees').select('*').eq('etablissement_id',user.id).order('date_soiree',{ascending:true});const res=[];for(const s of(soirs||[])){const{data:dems}=await supabase.from('demandes').select('*, artistes:artiste_id(nom_scene, type_artiste, photo_url)').eq('soiree_id',s.id);res.push({...s,demandes:dems||[]});}setSoirees(res);
+      // Load candidatures (demandes initiated by artists)
+      const{data:cands}=await supabase.from('demandes').select('*, soirees(*), artistes:artiste_id(nom_scene, type_artiste, photo_url, ville, styles)').eq('etablissement_id',user.id).eq('initiated_by','artiste').order('created_at',{ascending:false});
+      setCandidatures(cands||[]);
+      setLoadingSoirees(false);}load();},[]);
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const sc={draft:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Cherche artiste'},confirmed:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Confirmé'},cancelled:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Annulé'}};
  
@@ -183,6 +201,31 @@ function VenueDashboard({data,user,completion,supabase}){
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{soirees.filter(s=>s.status==='confirmed').length}</div><div className="text-[11px] text-dim mt-1">Confirmées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-accent">{soirees.reduce((n,s)=>n+s.demandes.length,0)}</div><div className="text-[11px] text-dim mt-1">Demandes</div></div>
       </div>
+ 
+      
+      {/* CANDIDATURES */}
+      {candidatures.filter(c=>c.status==='pending').length>0&&(
+        <div className="mb-5 animate-fade-up" style={{animationDelay:'0.08s'}}>
+          <div className="bg-blue/5 border border-blue/10 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3"><span className="text-blue">🎤</span><span className="text-sm font-medium text-blue">Candidatures reçues</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue">{candidatures.filter(c=>c.status==='pending').length}</span></div>
+            <div className="space-y-2">{candidatures.filter(c=>c.status==='pending').map(c=>{const a=c.artistes;const s=c.soirees;const formatDV=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]}`;};return(
+              <div key={c.id} className="bg-bg border border-border rounded-lg p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">{a?.photo_url?<img src={a.photo_url} alt="" className="w-full h-full object-cover"/>:ARTIST_EMOJIS[a?.type_artiste]||'🎵'}</div>
+                  <div className="flex-1 min-w-0"><div className="text-sm font-medium">{a?.nom_scene}</div><div className="text-[11px] text-dim">{a?.type_artiste} · {a?.ville}</div>{a?.styles?.length>0&&<div className="flex gap-1 mt-1">{a.styles.slice(0,3).map(st=>(<span key={st} className="text-[9px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">{st}</span>))}</div>}</div>
+                </div>
+                <div className="text-xs text-dim mb-2">Pour : <span className="text-white font-medium">{s?.titre}</span> · {formatDV(s?.date_soiree)} · {s?.heure_debut}–{s?.heure_fin}</div>
+                {c.message&&<div className="text-xs text-muted italic mb-3 bg-bg-card rounded-lg p-2.5">&quot;{c.message}&quot;</div>}
+                <div className="flex gap-2">
+                  <button onClick={()=>handleCandidature(c.id,'declined')} className="text-xs px-4 py-2 rounded-lg bg-bg-card border border-border text-muted hover:text-white transition">Refuser</button>
+                  <button onClick={()=>handleCandidature(c.id,'accepted')} className="flex-1 text-xs py-2 rounded-lg bg-blue text-black font-medium">✓ Accepter {a?.nom_scene}</button>
+                  <Link href={`/messages?to=${c.artiste_id}&name=${encodeURIComponent(a?.nom_scene||'')}`} className="text-xs px-4 py-2 rounded-lg bg-accent/10 text-accent border border-accent/20">💬</Link>
+                </div>
+              </div>
+            );})}</div>
+          </div>
+        </div>
+      )}
  
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.1s'}}>
         <h2 className="text-sm font-medium flex items-center gap-2 mb-3">📅 Mes soirées</h2>
@@ -207,6 +250,63 @@ function VenueDashboard({data,user,completion,supabase}){
       </div>
       <BottomNav active="home" role="etablissement"/>
     </div></div>
+  );
+}
+ 
+function PostulerButton({ soiree, supabase, userId, artistName }) {
+  const [show, setShow] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+ 
+  const handlePostuler = async () => {
+    setSending(true);
+    // Create demande initiated by artist
+    await supabase.from('demandes').insert({
+      soiree_id: soiree.id,
+      etablissement_id: soiree.etablissement_id,
+      artiste_id: userId,
+      status: 'pending',
+      message: msg.trim() || null,
+      initiated_by: 'artiste',
+    });
+ 
+    // Auto-send message in conversation
+    const convId = [userId, soiree.etablissement_id].sort().join('_');
+    const autoMsg = msg.trim()
+      ? `🎤 Candidature pour "${soiree.titre}" — ${msg.trim()}`
+      : `🎤 Je postule pour votre soirée "${soiree.titre}" !`;
+    await supabase.from('messages').insert({
+      conversation_id: convId,
+      sender_id: userId,
+      receiver_id: soiree.etablissement_id,
+      content: autoMsg,
+      read: false,
+    });
+ 
+    setSending(false);
+    setSent(true);
+    setShow(false);
+    setMsg('');
+  };
+ 
+  if (sent) return <span className="text-xs px-3 py-1.5 rounded-lg bg-green-400/10 text-green-400 border border-green-400/20 flex-shrink-0">✓ Candidature envoyée</span>;
+ 
+  return (
+    <div className="flex-shrink-0">
+      {!show ? (
+        <button onClick={() => setShow(true)} className="text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition">Postuler</button>
+      ) : (
+        <div className="mt-2 bg-bg border border-accent/20 rounded-xl p-3 animate-fade-up space-y-2" style={{minWidth:'220px'}}>
+          <div className="text-[11px] font-medium text-accent">🎤 Postuler pour {soiree.titre}</div>
+          <input value={msg} onChange={e => setMsg(e.target.value)} placeholder="Message personnalisé (optionnel)" className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white focus:border-accent transition placeholder:text-dim" />
+          <div className="flex gap-2">
+            <button onClick={() => { setShow(false); setMsg(''); }} className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted hover:text-white transition">Annuler</button>
+            <button onClick={handlePostuler} disabled={sending} className="flex-1 text-xs py-1.5 rounded-lg bg-accent text-black font-medium disabled:opacity-50">{sending ? '...' : '📨 Envoyer'}</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
  
