@@ -182,6 +182,18 @@ function VenueDashboard({data,user,completion,supabase}){
   };
   const deleteSoiree=async(id)=>{if(!confirm('Supprimer cette soirée ? Les demandes associées seront aussi supprimées.'))return;await supabase.from('demandes').delete().eq('soiree_id',id);await supabase.from('soirees').delete().eq('id',id);setSoirees(prev=>prev.filter(s=>s.id!==id));};
   useEffect(()=>{async function load(){const{data:soirs}=await supabase.from('soirees').select('*').eq('etablissement_id',user.id).order('date_soiree',{ascending:true});const res=[];for(const s of(soirs||[])){const{data:dems}=await supabase.from('demandes').select('*, artistes:artiste_id(nom_scene, type_artiste, photo_url)').eq('soiree_id',s.id);res.push({...s,demandes:dems||[]});}setSoirees(res);
+      // Auto-fix: check soirées that should be confirmed
+      for(const s of res){
+        if(s.status==='draft'){
+          const acceptedCount=s.demandes.filter(d=>d.status==='accepted').length;
+          const needed=s.nb_artistes||1;
+          if(acceptedCount>=needed){
+            await supabase.from('soirees').update({status:'confirmed'}).eq('id',s.id);
+            s.status='confirmed';
+          }
+        }
+      }
+      setSoirees([...res]);
       // Load candidatures (demandes initiated by artists)
       const{data:cands}=await supabase.from('demandes').select('*, soirees(*), artistes:artiste_id(nom_scene, type_artiste, photo_url, ville, styles)').eq('etablissement_id',user.id).eq('initiated_by','artiste').order('created_at',{ascending:false});
       setCandidatures(cands||[]);
