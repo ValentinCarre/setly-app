@@ -34,12 +34,14 @@ export default function Explorer() {
   const [dateFilter, setDateFilter] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const supabase = createClient();
+  const [mySoirees, setMySoirees] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
  
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      let role = 'etablissement'; // default: show artists
-      if (user) {
+      let role = "etablissement"; let currentUser = null; // default: show artists
+      if (user) { setCurrentUserId(user.id);
         const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (prof) role = prof.role;
       }
@@ -151,7 +153,7 @@ export default function Explorer() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {filtered.map((item, i) => isArtistView ? (
-              <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dispoFilter={dispoFilter} dateFilter={dateFilter} />
+              <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dispoFilter={dispoFilter} dateFilter={dateFilter} soirees={mySoirees} supabase={supabase} userId={currentUserId} />
             ) : (
               <VenueCard key={item.id} v={item} i={i} />
             ))}
@@ -162,7 +164,14 @@ export default function Explorer() {
   );
 }
  
-function ArtistCard({ a, i, styleFilter, setStyleFilter, dispoFilter, dateFilter }) {
+function ArtistCard({ a, i, styleFilter, setStyleFilter, dispoFilter, dateFilter, soirees, supabase, userId }) {
+  const [showPropose, setShowPropose] = useState(false);
+  const [proposeSent, setProposeSent] = useState(false);
+  const sendDemande = async (soireeId) => {
+    await supabase.from("demandes").insert({ soiree_id: soireeId, etablissement_id: userId, artiste_id: a.id, status: "pending", message: "" });
+    setProposeSent(true); setShowPropose(false);
+    setTimeout(() => setProposeSent(false), 3000);
+  };
   return (
     <div className="bg-bg-card border border-border rounded-2xl p-5 hover:border-accent/20 hover:-translate-y-0.5 transition animate-fade-up group" style={{animationDelay:`${Math.min(i*0.05,0.5)}s`}}>
       <div className="flex items-start gap-4">
@@ -184,7 +193,12 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dispoFilter, dateFilter
           {a.instagram && <a href={`https://instagram.com/${a.instagram.replace('@','')}`} target="_blank" className="w-7 h-7 rounded-md bg-pink-500/10 flex items-center justify-center text-xs hover:bg-pink-500/20 transition">📸</a>}
         </div>
       </div>
-      <Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="w-full mt-3 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition block text-center">📩 Contacter {a.nom_scene}</Link>
+      <div className="flex gap-2 mt-3">
+<Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="flex-1 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition block text-center">📩 Contacter</Link>
+{soirees&&soirees.length>0&&!proposeSent&&(<button onClick={()=>setShowPropose(!showPropose)} className="flex-1 text-xs py-2.5 rounded-lg bg-blue/10 text-blue border border-blue/20 font-medium hover:bg-blue/20 transition">📋 Proposer une soirée</button>)}
+{proposeSent&&<span className="flex-1 text-xs py-2.5 rounded-lg bg-green-400/10 text-green-400 border border-green-400/20 text-center">✓ Demande envoyée</span>}
+</div>
+{showPropose&&(<div className="mt-2 bg-bg border border-border rounded-lg p-2 space-y-1 animate-fade-up">{soirees.map(s=>(<button key={s.id} onClick={()=>sendDemande(s.id)} className="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-bg-card transition"><span className="font-medium">{s.titre}</span><span className="text-dim ml-2">{s.date_soiree}</span></button>))}</div>)}
     </div>
   );
 }
