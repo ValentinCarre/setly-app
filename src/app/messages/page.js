@@ -78,6 +78,14 @@ function MessagesContent() {
  
   const openConversation = (conv) => { setActiveConv(conv.id); setMessages(conv.messages); };
  
+  const deleteConversation = async (convId) => {
+    if (!confirm('Supprimer cette conversation ? Tous les messages seront perdus.')) return;
+    await supabase.from('messages').delete().eq('conversation_id', convId);
+    setConversations(prev => prev.filter(c => c.id !== convId));
+    if (activeConv === convId) { setActiveConv(null); setMessages([]); }
+    localStorage.setItem('setly-messages-read', Date.now().toString());
+  };
+ 
   const sendMessage = async () => {
     if (!newMsg.trim() || !activeConv || !user) return;
     setSending(true);
@@ -133,6 +141,7 @@ function MessagesContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between"><span className="text-sm font-medium truncate">{getName(conv.otherId)}</span>{conv.unread>0&&<span className="w-5 h-5 bg-accent text-black text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">{conv.unread}</span>}</div>
                       <p className="text-[11px] text-dim truncate mt-0.5">{conv.lastMsg.content}</p>
+                      <button onClick={(e)=>{e.stopPropagation();deleteConversation(conv.id);}} className="text-[10px] text-red-400/50 hover:text-red-400 transition mt-0.5">Supprimer</button>
                     </div>
                   </div>
                 ))}
