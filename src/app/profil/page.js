@@ -89,7 +89,7 @@ function ArtistDashboard({data,user,completion,supabase}){
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">{s.titre}</div>
                     <div className="text-[11px] text-dim">{s.etablissements?.nom} · {s.etablissements?.ville}</div>
-                    <div className="text-[10px] text-accent mt-0.5">📅 {formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin} {s.ambiance && `· ${s.ambiance}`}</div>
+                    <div className="text-[10px] text-accent mt-0.5">📅 {formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin}{s.cachet&&` · ${s.cachet}€`} {s.ambiance && `· ${s.ambiance}`}</div>
                   </div>
                   <Link href={`/messages?to=${s.etablissement_id}&name=${encodeURIComponent(s.etablissements?.nom||'')}`} className="text-xs px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition flex-shrink-0">Postuler</Link>
                 </div>
@@ -120,7 +120,7 @@ function ArtistDashboard({data,user,completion,supabase}){
               <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span>
             </div>
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-              <span className="text-xs text-dim">📅 {formatD(s?.date_soiree)} · {s?.heure_debut}–{s?.heure_fin}</span>
+              <span className="text-xs text-dim">📅 {formatD(s?.date_soiree)} · {s?.heure_debut}–{s?.heure_fin}{s?.cachet&&<span className="ml-2 text-accent">💰 {s.cachet}€{s.moyen_paiement&&` · ${s.moyen_paiement}`}</span>}</span>
               <div className="flex gap-2">
                 {d.status==='pending'&&(<><button onClick={()=>handleDemande(d.id,'declined')} className="text-xs px-3 py-1.5 rounded-lg bg-bg-card border border-border text-muted hover:text-white transition">Refuser</button><button onClick={()=>handleDemande(d.id,'accepted')} className="text-xs px-3 py-1.5 rounded-lg bg-accent text-black font-medium">Accepter</button></>)}
                 {d.status!=='pending'&&<Link href={`/messages?to=${d.etablissement_id}&name=${encodeURIComponent(e?.nom||'')}`} className="text-xs px-3 py-1.5 rounded-lg bg-blue/10 text-blue border border-blue/20">💬 Message</Link>}
@@ -178,7 +178,7 @@ function VenueDashboard({data,user,completion,supabase}){
           <div key={s.id} className="bg-bg border border-border rounded-xl p-4 hover:border-dim transition">
             <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium">{s.titre}</div><div className="text-xs text-dim mt-1">📅 {formatD(s.date_soiree)} · {s.heure_debut||''}–{s.heure_fin||''}</div></div><span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span></div>
             {s.demandes.length>0&&<div className="flex flex-wrap gap-2 mb-3">{s.demandes.map((d,i)=>(<div key={i} className="flex items-center gap-1.5 text-xs bg-bg-card border border-border rounded-lg px-2.5 py-1.5"><span>{ARTIST_EMOJIS[d.artistes?.type_artiste]||'🎵'}</span><span className="font-medium">{d.artistes?.nom_scene}</span><span className={`text-[9px] px-1.5 py-0.5 rounded ${d.status==='accepted'?'bg-green-400/10 text-green-400':d.status==='declined'?'bg-red-400/10 text-red-400':'bg-accent/10 text-accent'}`}>{d.status==='accepted'?'OK':d.status==='declined'?'Refusé':'En attente'}</span></div>))}</div>}
-            <div className="flex items-center justify-between pt-3 border-t border-border"><span className="text-xs text-dim">{s.ambiance&&`🎵 ${s.ambiance}`}</span>{s.status==='draft'&&<Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}</div>
+            <div className="flex items-center justify-between pt-3 border-t border-border"><span className="text-xs text-dim">{s.ambiance&&`🎵 ${s.ambiance}`}{s.cachet&&<span className="ml-2">💰 {s.cachet}€{s.moyen_paiement&&` · ${s.moyen_paiement}`}</span>}</span>{s.status==='draft'&&<Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}</div>
           </div>);})}</div>}
       </div>
  
