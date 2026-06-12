@@ -31,7 +31,7 @@ export default function Explorer() {
         const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (prof) role = prof.role;
         if (role === 'etablissement') {
-          const { data: soirs } = await supabase.from('soirees').select('id, titre, date_soiree, heure_debut, heure_fin, ambiance, cachet, moyen_paiement').eq('etablissement_id', user.id).eq('status', 'draft').order('date_soiree', { ascending: true });
+          const { data: soirs } = await supabase.from('soirees').select('id, titre, date_soiree, heure_debut, heure_fin, ambiance, cachet, moyen_paiement, nb_artistes').eq('etablissement_id', user.id).eq('status', 'draft').order('date_soiree', { ascending: true });
           setMySoirees(soirs || []);
           const { data: dems } = await supabase.from('demandes').select('soiree_id, artiste_id, status').eq('etablissement_id', user.id);
           setMyDemandes(dems || []);
@@ -186,7 +186,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
  
       <div className="flex gap-2 mt-3">
         <Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="flex-1 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition text-center">📩 Contacter</Link>
-{availableSoirees.length > 0 && !proposeSent && (
+        {availableSoirees.length > 0 && !proposeSent && !alreadyProposed && (
           <button onClick={() => setShowPropose(!showPropose)} className={`flex-1 text-xs py-2.5 rounded-lg border font-medium transition ${showPropose ? 'bg-blue/20 text-blue border-blue/30' : 'bg-blue/10 text-blue border-blue/20 hover:bg-blue/20'}`}>📋 Proposer une soirée</button>
         )}
         {proposeSent && <span className="flex-1 text-xs py-2.5 rounded-lg bg-green-400/10 text-green-400 border border-green-400/20 text-center">✓ Demande envoyée !</span>}
@@ -201,7 +201,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
               <button key={s.id} onClick={() => setSelectedSoiree(s.id)} className={`w-full text-left text-xs px-3 py-2.5 rounded-lg border transition ${selectedSoiree === s.id ? 'bg-blue/10 border-blue/30 text-blue' : 'border-border hover:bg-bg-card text-muted'}`}>
                 <span className="font-medium">{s.titre}</span>
                 <span className="text-dim ml-2">{formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin}</span>
-                {s.cachet && <span className="text-accent ml-1">· {s.cachet}€</span>}
+                {s.cachet && <span className="text-accent ml-1">· {s.cachet}€</span>}{s.nb_artistes && s.nb_artistes > 1 && <span className="text-dim ml-1">· {s.nb_artistes} artistes</span>}
               </button>
             ))}
           </div>
