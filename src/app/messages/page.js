@@ -71,7 +71,7 @@ function MessagesContent() {
         setMessages(prev => prev.map(m => m.receiver_id === user.id ? { ...m, read: true } : m));
         setConversations(prev => prev.map(c => c.id === activeConv ? { ...c, unread: 0 } : c));
         // Notify navbar to refresh count immediately
-        window.dispatchEvent(new Event('messages-read'));
+        localStorage.setItem('setly-messages-read', Date.now().toString());
       });
     }
   }, [activeConv, messages.length]);
