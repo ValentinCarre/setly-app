@@ -52,6 +52,7 @@ function ArtistDashboard({data,user,completion,supabase}){
  
   const toggleDate=(d)=>{setDatesDispo(prev=>prev.includes(d)?prev.filter(x=>x!==d):[...prev,d]);setDatesSaved(false);};
   const saveDates=async()=>{setSavingDates(true);await supabase.from('artistes').update({dates_dispo:datesDispo}).eq('id',user.id);setSavingDates(false);setDatesSaved(true);setTimeout(()=>setDatesSaved(false),3000);};
+  const deleteDemande=async(id)=>{if(!confirm('Supprimer cette demande ?'))return;await supabase.from('demandes').delete().eq('id',id);setDemandes(prev=>prev.filter(d=>d.id!==id));};
   const handleDemande=async(demandeId,newStatus)=>{
     await supabase.from('demandes').update({status:newStatus}).eq('id',demandeId);
     if(newStatus==='accepted'){
@@ -115,7 +116,7 @@ function ArtistDashboard({data,user,completion,supabase}){
       {/* CALENDAR */}
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.09s'}}>
         <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">📅 Mes disponibilités</h2><button onClick={()=>setShowCal(!showCal)} className="text-xs text-accent hover:underline">{showCal?'Masquer':'Gérer mes dates'}</button></div>
-        {datesDispo.length>0&&!showCal&&<div className="flex flex-wrap gap-1.5 mb-2">{datesDispo.sort().slice(0,8).map(d=>(<span key={d} className="text-[10px] px-2.5 py-1 rounded-full bg-accent/10 border border-accent/15 text-accent">{formatD(d)}</span>))}{datesDispo.length>8&&<span className="text-[10px] px-2.5 py-1 rounded-full bg-bg-card text-dim">+{datesDispo.length-8}</span>}</div>}
+        {datesDispo.length>0&&!showCal&&<div className="flex flex-wrap gap-1.5 mb-2">{datesDispo.sort().slice(0,8).map(d=>(<span key={d} className="text-[10px] px-2.5 py-1 rounded-full bg-accent/10 border border-accent/15 text-accent flex items-center gap-1">{formatD(d)}<button onClick={async()=>{const nd=datesDispo.filter(x=>x!==d);setDatesDispo(nd);await supabase.from('artistes').update({dates_dispo:nd}).eq('id',user.id);}} className="hover:text-white">✕</button></span>))}{datesDispo.length>8&&<span className="text-[10px] px-2.5 py-1 rounded-full bg-bg-card text-dim">+{datesDispo.length-8}</span>}</div>}
         {datesDispo.length===0&&!showCal&&<p className="text-xs text-dim">Ajoutez vos dates pour voir les soirées disponibles</p>}
         {showCal&&(<div className="space-y-3 animate-fade-up"><Calendar selectedDates={datesDispo} onToggleDate={toggleDate} color="accent"/><div className="flex items-center gap-3"><button onClick={saveDates} disabled={savingDates} className="text-xs px-4 py-2 rounded-lg bg-accent text-black font-medium disabled:opacity-50">{savingDates?'...':'💾 Enregistrer'}</button>{datesSaved&&<span className="text-xs text-green-400">✓ Sauvegardé</span>}</div></div>)}
       </div>
@@ -136,7 +137,7 @@ function ArtistDashboard({data,user,completion,supabase}){
               <span className="text-xs text-dim">📅 {formatD(s?.date_soiree)} · {s?.heure_debut}–{s?.heure_fin}{s?.cachet&&<span className="ml-2 text-accent">💰 {s.cachet}€{s.moyen_paiement&&` · ${s.moyen_paiement}`}</span>}</span>
               <div className="flex gap-2">
                 {d.status==='pending'&&(<><button onClick={()=>handleDemande(d.id,'declined')} className="text-xs px-3 py-1.5 rounded-lg bg-bg-card border border-border text-muted hover:text-white transition">Refuser</button><button onClick={()=>handleDemande(d.id,'accepted')} className="text-xs px-3 py-1.5 rounded-lg bg-accent text-black font-medium">Accepter</button></>)}
-                {d.status!=='pending'&&<Link href={`/messages?to=${d.etablissement_id}&name=${encodeURIComponent(e?.nom||'')}`} className="text-xs px-3 py-1.5 rounded-lg bg-blue/10 text-blue border border-blue/20">💬 Message</Link>}
+                {d.status!=='pending'&&<Link href={`/messages?to=${d.etablissement_id}&name=${encodeURIComponent(e?.nom||'')}`} className="text-xs px-3 py-1.5 rounded-lg bg-blue/10 text-blue border border-blue/20">💬 Message</Link>}{d.status==='declined'&&<button onClick={()=>deleteDemande(d.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 hover:bg-red-400/20 transition">🗑️</button>}
               </div>
             </div>
             {d.message&&<div className="mt-2 text-xs text-dim italic">&quot;{d.message}&quot;</div>}
@@ -162,6 +163,7 @@ function ArtistDashboard({data,user,completion,supabase}){
  
 function VenueDashboard({data,user,completion,supabase}){
   const[soirees,setSoirees]=useState([]);const[loadingSoirees,setLoadingSoirees]=useState(true);
+  const deleteSoiree=async(id)=>{if(!confirm('Supprimer cette soirée ? Les demandes associées seront aussi supprimées.'))return;await supabase.from('demandes').delete().eq('soiree_id',id);await supabase.from('soirees').delete().eq('id',id);setSoirees(prev=>prev.filter(s=>s.id!==id));};
   useEffect(()=>{async function load(){const{data:soirs}=await supabase.from('soirees').select('*').eq('etablissement_id',user.id).order('date_soiree',{ascending:true});const res=[];for(const s of(soirs||[])){const{data:dems}=await supabase.from('demandes').select('*, artistes:artiste_id(nom_scene, type_artiste, photo_url)').eq('soiree_id',s.id);res.push({...s,demandes:dems||[]});}setSoirees(res);setLoadingSoirees(false);}load();},[]);
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const sc={draft:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Cherche artiste'},confirmed:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Confirmé'},cancelled:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Annulé'}};
@@ -191,7 +193,7 @@ function VenueDashboard({data,user,completion,supabase}){
           <div key={s.id} className="bg-bg border border-border rounded-xl p-4 hover:border-dim transition">
             <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium">{s.titre}</div><div className="text-xs text-dim mt-1">📅 {formatD(s.date_soiree)} · {s.heure_debut||''}–{s.heure_fin||''}</div></div><span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span></div>
             {<div className="flex flex-wrap gap-2 mb-3"><span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue border border-blue/15">{s.demandes.filter(d=>d.status==='accepted').length}/{s.nb_artistes||1} artiste{(s.nb_artistes||1)>1?'s':''}</span>{s.demandes.map((d,i)=>(<div key={i} className="flex items-center gap-1.5 text-xs bg-bg-card border border-border rounded-lg px-2.5 py-1.5"><span>{ARTIST_EMOJIS[d.artistes?.type_artiste]||'🎵'}</span><span className="font-medium">{d.artistes?.nom_scene}</span><span className={`text-[9px] px-1.5 py-0.5 rounded ${d.status==='accepted'?'bg-green-400/10 text-green-400':d.status==='declined'?'bg-red-400/10 text-red-400':'bg-accent/10 text-accent'}`}>{d.status==='accepted'?'OK':d.status==='declined'?'Refusé':'En attente'}</span></div>))}</div>}
-            <div className="flex items-center justify-between pt-3 border-t border-border"><span className="text-xs text-dim">{s.ambiance&&`🎵 ${s.ambiance}`}{s.cachet&&<span className="ml-2">💰 {s.cachet}€{s.moyen_paiement&&` · ${s.moyen_paiement}`}</span>}</span>{s.status==='draft'&&<Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}</div>
+            <div className="flex items-center justify-between pt-3 border-t border-border"><span className="text-xs text-dim">{s.ambiance&&`🎵 ${s.ambiance}`}{s.cachet&&<span className="ml-2">💰 {s.cachet}€{s.moyen_paiement&&` · ${s.moyen_paiement}`}</span>}</span>{s.status==='draft'&&<Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}<button onClick={()=>deleteSoiree(s.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 hover:bg-red-400/20 transition">🗑️</button></div>
           </div>);})}</div>}
       </div>
  
