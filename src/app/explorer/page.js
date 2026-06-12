@@ -186,7 +186,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
  
       <div className="flex gap-2 mt-3">
         <Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="flex-1 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition text-center">📩 Contacter</Link>
-        {availableSoirees.length > 0 && !proposeSent && !alreadyProposed && (
+{availableSoirees.length > 0 && !proposeSent && (
           <button onClick={() => setShowPropose(!showPropose)} className={`flex-1 text-xs py-2.5 rounded-lg border font-medium transition ${showPropose ? 'bg-blue/20 text-blue border-blue/30' : 'bg-blue/10 text-blue border-blue/20 hover:bg-blue/20'}`}>📋 Proposer une soirée</button>
         )}
         {proposeSent && <span className="flex-1 text-xs py-2.5 rounded-lg bg-green-400/10 text-green-400 border border-green-400/20 text-center">✓ Demande envoyée !</span>}
