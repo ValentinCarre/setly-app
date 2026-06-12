@@ -18,6 +18,10 @@ return<VenueDashboard data={data} user={user} completion={gc()} supabase={supaba
  
 function ArtistDashboard({data,user,completion,supabase}){
   const[datesDispo,setDatesDispo]=useState(data.dates_dispo||[]);
+  const[soireesToRate,setSoireesToRate]=useState([]);
+  const[myAvis,setMyAvis]=useState([]);
+  const[avgRating,setAvgRating]=useState(null);
+  const[ratingCount,setRatingCount]=useState(0);
   const[savingDates,setSavingDates]=useState(false);
   const[showCal,setShowCal]=useState(false);
   const[datesSaved,setDatesSaved]=useState(false);
@@ -44,6 +48,19 @@ function ArtistDashboard({data,user,completion,supabase}){
         // Filter out soirées where this artist already has a demande
         const demandesSoireeIds = (dems||[]).map(d => d.soiree_id);
         setMatchingSoirees(matching.filter(s => !demandesSoireeIds.includes(s.id)));
+      }
+      // Load past confirmed soirées to rate
+      const pastAccepted=(dems||[]).filter(d=>d.status==='accepted'&&d.soirees&&new Date(d.soirees.date_soiree+'T23:59:59')<new Date());
+      // Load existing avis by this artist
+      const{data:myReviews}=await supabase.from('avis').select('*').eq('reviewer_id',user.id);
+      setMyAvis(myReviews||[]);
+      const reviewedSoireeIds=(myReviews||[]).map(r=>r.soiree_id);
+      setSoireesToRate(pastAccepted.filter(d=>!reviewedSoireeIds.includes(d.soiree_id)));
+      // Load received ratings
+      const{data:receivedAvis}=await supabase.from('avis').select('note').eq('reviewed_id',user.id);
+      if(receivedAvis&&receivedAvis.length>0){
+        setAvgRating((receivedAvis.reduce((s,a)=>s+a.note,0)/receivedAvis.length).toFixed(1));
+        setRatingCount(receivedAvis.length);
       }
       setLoadingData(false);
     }
@@ -88,7 +105,7 @@ function ArtistDashboard({data,user,completion,supabase}){
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-accent">{pending.length}</div><div className="text-[11px] text-dim mt-1">En attente</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{accepted.length}</div><div className="text-[11px] text-dim mt-1">Acceptées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{matchingSoirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées dispo</div></div>
-        <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold">{datesDispo.length}</div><div className="text-[11px] text-dim mt-1">Dates dispo</div></div>
+        <div className="bg-bg-card rounded-xl p-3.5 text-center">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</div>
       </div>
  
       {/* MATCHING SOIREES */}
@@ -147,6 +164,16 @@ function ArtistDashboard({data,user,completion,supabase}){
       {/* UPCOMING */}
       {accepted.length>0&&<div className="mb-5 animate-fade-up" style={{animationDelay:'0.15s'}}><h2 className="text-sm font-medium flex items-center gap-2 mb-3">🎵 Prochaines soirées</h2><div className="space-y-2">{accepted.map(d=>{const s=d.soirees;const e=d.etablissements;const dt=s?.date_soiree?new Date(s.date_soiree+'T00:00:00'):null;return(<div key={d.id} className="bg-bg border border-border rounded-xl p-4 flex items-center gap-4"><div className="text-center w-12 flex-shrink-0"><div className="text-lg font-semibold">{dt?.getDate()}</div><div className="text-[10px] text-dim uppercase">{dt?['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'][dt.getMonth()]:''}</div></div><div className="flex-1 min-w-0"><div className="text-sm font-medium">{s?.titre}</div><div className="text-xs text-dim mt-0.5">{e?.nom}</div><div className="text-xs text-accent mt-1">🕐 {s?.heure_debut}–{s?.heure_fin}</div></div><span className="text-[10px] px-2.5 py-1 rounded-full font-medium border bg-green-400/10 border-green-400/20 text-green-400">Confirmé</span></div>);})}</div></div>}
  
+      {/* RATE SOIRÉES */}
+      {soireesToRate.length>0&&(
+        <div className="mb-5 animate-fade-up" style={{animationDelay:'0.18s'}}>
+          <div className="bg-amber-400/5 border border-amber-400/10 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3"><span>⭐</span><span className="text-sm font-medium text-amber-400">Soirées à évaluer</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400">{soireesToRate.length}</span></div>
+            <div className="space-y-2">{soireesToRate.map(d=>{const s=d.soirees;const e=d.etablissements;return(<RateCard key={d.id} soiree={s} targetId={s.etablissement_id} targetName={e?.nom||'Établissement'} targetRole="etablissement" supabase={supabase} userId={user.id} onRated={(avis)=>{setSoireesToRate(prev=>prev.filter(x=>x.id!==d.id));setMyAvis(prev=>[...prev,avis]);}} />);})}</div>
+          </div>
+        </div>
+      )}
+ 
       {/* PROFILE */}
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.2s'}}>
         <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">👤 Mon profil</h2><Link href="/onboarding/artiste" className="text-xs text-dim hover:text-muted">Modifier</Link></div>
@@ -164,6 +191,9 @@ function ArtistDashboard({data,user,completion,supabase}){
 function VenueDashboard({data,user,completion,supabase}){
   const[soirees,setSoirees]=useState([]);const[loadingSoirees,setLoadingSoirees]=useState(true);
   const[candidatures,setCandidatures]=useState([]);
+  const[soireesToRate,setSoireesToRate]=useState([]);
+  const[avgRating,setAvgRating]=useState(null);
+  const[ratingCount,setRatingCount]=useState(0);
   const handleCandidature=async(id,newStatus)=>{
     await supabase.from('demandes').update({status:newStatus}).eq('id',id);
     if(newStatus==='accepted'){
@@ -197,6 +227,16 @@ function VenueDashboard({data,user,completion,supabase}){
       // Load candidatures (demandes initiated by artists)
       const{data:cands}=await supabase.from('demandes').select('*, soirees(*), artistes:artiste_id(nom_scene, type_artiste, photo_url, ville, styles)').eq('etablissement_id',user.id).eq('initiated_by','artiste').order('created_at',{ascending:false});
       setCandidatures(cands||[]);
+      // Load past soirées to rate (confirmed + date passed)
+      const pastSoirees=res.filter(s=>s.status==='confirmed'&&new Date(s.date_soiree+'T23:59:59')<new Date()&&s.demandes.some(d=>d.status==='accepted'));
+      const{data:myReviews}=await supabase.from('avis').select('*').eq('reviewer_id',user.id);
+      const reviewedPairs=(myReviews||[]).map(r=>r.soiree_id+'_'+r.reviewed_id);
+      const toRate=[];
+      pastSoirees.forEach(s=>{s.demandes.filter(d=>d.status==='accepted').forEach(d=>{if(!reviewedPairs.includes(s.id+'_'+d.artistes?.id)){toRate.push({soiree:s,artiste:d.artistes,artisteId:d.artiste_id});}});});
+      setSoireesToRate(toRate);
+      // Received ratings
+      const{data:receivedAvis}=await supabase.from('avis').select('note').eq('reviewed_id',user.id);
+      if(receivedAvis&&receivedAvis.length>0){setAvgRating((receivedAvis.reduce((sum,a)=>sum+a.note,0)/receivedAvis.length).toFixed(1));setRatingCount(receivedAvis.length);}
       setLoadingSoirees(false);}load();},[]);
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const sc={draft:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Cherche artiste'},confirmed:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Confirmé'},cancelled:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Annulé'}};
@@ -214,7 +254,7 @@ function VenueDashboard({data,user,completion,supabase}){
       <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{soirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{soirees.filter(s=>s.status==='confirmed').length}</div><div className="text-[11px] text-dim mt-1">Confirmées</div></div>
-        <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-accent">{soirees.reduce((n,s)=>n+s.demandes.length,0)}</div><div className="text-[11px] text-dim mt-1">Demandes</div></div>
+        <div className="bg-bg-card rounded-xl p-3.5 text-center">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</div>
       </div>
  
       
@@ -255,6 +295,16 @@ function VenueDashboard({data,user,completion,supabase}){
           </div>);})}</div>}
       </div>
  
+      {/* RATE ARTISTS */}
+      {soireesToRate.length>0&&(
+        <div className="mb-5 animate-fade-up" style={{animationDelay:'0.18s'}}>
+          <div className="bg-amber-400/5 border border-amber-400/10 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3"><span>⭐</span><span className="text-sm font-medium text-amber-400">Artistes à évaluer</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400">{soireesToRate.length}</span></div>
+            <div className="space-y-2">{soireesToRate.map((item,i)=>(<RateCard key={i} soiree={item.soiree} targetId={item.artisteId} targetName={item.artiste?.nom_scene||'Artiste'} targetRole="artiste" supabase={supabase} userId={user.id} onRated={()=>{setSoireesToRate(prev=>prev.filter((_,j)=>j!==i));}} />))}</div>
+          </div>
+        </div>
+      )}
+ 
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.2s'}}>
         <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">🏪 Ma fiche</h2><Link href="/onboarding/etablissement" className="text-xs text-dim hover:text-muted">Modifier</Link></div>
         <div className="bg-bg border border-border rounded-xl p-4 flex items-center gap-4">
@@ -265,6 +315,52 @@ function VenueDashboard({data,user,completion,supabase}){
       </div>
       <BottomNav active="home" role="etablissement"/>
     </div></div>
+  );
+}
+ 
+function RateCard({ soiree, targetId, targetName, targetRole, supabase, userId, onRated }) {
+  const [note, setNote] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [commentaire, setCommentaire] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+ 
+  const formatDR = (d) => { if (!d) return ''; const dt = new Date(d + 'T00:00:00'); const mn = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']; return `${dt.getDate()} ${mn[dt.getMonth()]}`; };
+ 
+  const submit = async () => {
+    if (!note) return;
+    setSending(true);
+    const avis = { soiree_id: soiree.id, reviewer_id: userId, reviewed_id: targetId, note, commentaire: commentaire.trim() || null };
+    await supabase.from('avis').insert(avis);
+    setSending(false);
+    setSent(true);
+    if (onRated) onRated(avis);
+  };
+ 
+  if (sent) return <div className="bg-bg border border-green-400/20 rounded-lg p-3 text-center"><span className="text-xs text-green-400">✓ Avis envoyé pour {targetName}</span></div>;
+ 
+  return (
+    <div className="bg-bg border border-border rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-sm font-medium">{targetName}</div>
+          <div className="text-[10px] text-dim">{soiree.titre} · {formatDR(soiree.date_soiree)}</div>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-bg-card text-dim">{targetRole === 'artiste' ? '🎧' : '🍸'}</span>
+      </div>
+      <div className="flex items-center gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map(n => (
+          <button key={n} onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)} onClick={() => setNote(n)}
+            className={`text-2xl transition ${n <= (hover || note) ? 'text-amber-400' : 'text-dim/30'}`}
+            style={{ cursor: 'pointer' }}>★</button>
+        ))}
+        {note > 0 && <span className="text-xs text-amber-400 ml-2 font-medium">{note}/5</span>}
+      </div>
+      <input value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Commentaire (optionnel)" className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white focus:border-amber-400/50 transition placeholder:text-dim mb-3" />
+      <button onClick={submit} disabled={!note || sending} className="w-full text-xs py-2 rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/20 font-medium hover:bg-amber-400/20 transition disabled:opacity-30">
+        {sending ? '...' : '⭐ Envoyer mon avis'}
+      </button>
+    </div>
   );
 }
  
