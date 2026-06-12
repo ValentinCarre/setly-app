@@ -60,7 +60,7 @@ function ArtistDashboard({data,user,completion,supabase}){
       if(dem&&dem.soirees){
         const{count}=await supabase.from('demandes').select('*',{count:'exact',head:true}).eq('soiree_id',dem.soiree_id).eq('status','accepted');
         const needed=dem.soirees.nb_artistes||1;
-        if((count||0)+1>=needed){
+        if((count||0)>=needed){
           await supabase.from('soirees').update({status:'confirmed'}).eq('id',dem.soiree_id);
         }
       }
@@ -170,8 +170,11 @@ function VenueDashboard({data,user,completion,supabase}){
       const cand=candidatures.find(c=>c.id===id);
       if(cand&&cand.soirees){
         const{count}=await supabase.from('demandes').select('*',{count:'exact',head:true}).eq('soiree_id',cand.soiree_id).eq('status','accepted');
-        if((count||0)+1>=(cand.soirees.nb_artistes||1)){
+        const needed=cand.soirees.nb_artistes||1;
+        if((count||0)>=needed){
           await supabase.from('soirees').update({status:'confirmed'}).eq('id',cand.soiree_id);
+          // Update local soirées state to reflect confirmed status
+          setSoirees(prev=>prev.map(s=>s.id===cand.soiree_id?{...s,status:'confirmed'}:s));
         }
       }
     }
