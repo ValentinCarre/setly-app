@@ -19,6 +19,7 @@ export default function Explorer() {
   const [dateFilter, setDateFilter] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [mySoirees, setMySoirees] = useState([]);
+  const [myDemandes, setMyDemandes] = useState([]);
   const supabase = createClient();
  
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function Explorer() {
  
         // Load venue's draft soirées for propose feature
         if (role === 'etablissement') {
-          const { data: soirs } = await supabase.from('soirees').select('id, titre, date_soiree, heure_debut, heure_fin, ambiance').eq('etablissement_id', user.id).eq('status', 'draft').order('date_soiree', { ascending: true });
+          const { data: soirs } = await supabase.from('soirees').select('id, titre, date_soiree, heure_debut, heure_fin, ambiance, cachet, moyen_paiement').eq('etablissement_id', user.id).eq('status', 'draft').order('date_soiree', { ascending: true });
           setMySoirees(soirs || []);
         }
       }
@@ -104,7 +105,7 @@ export default function Explorer() {
         filtered.length===0?<div className="text-center py-20 animate-fade-up"><div className="text-5xl mb-4">{isArtistView?'🎵':'🏪'}</div><h3 className="font-display text-lg font-semibold mb-2">Aucun résultat</h3><button onClick={()=>{setSearch('');setTypeFilter('');setStyleFilter('');setVilleFilter('');setDispoFilter('');setDateFilter([]);}} className="text-sm text-accent hover:underline">Tout afficher</button></div>:
         <div className="grid md:grid-cols-2 gap-4">
           {filtered.map((item, i) => isArtistView
-            ? <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dateFilter={dateFilter} soirees={mySoirees} supabase={supabase} userId={userId} />
+            ? <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dateFilter={dateFilter} soirees={mySoirees} supabase={supabase} userId={userId} existingDemandes={myDemandes} setMyDemandes={setMyDemandes} />
             : <VenueCard key={item.id} v={item} i={i} />
           )}
         </div>}
@@ -113,7 +114,7 @@ export default function Explorer() {
   );
 }
  
-function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, supabase, userId }) {
+function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, supabase, userId, existingDemandes, setMyDemandes }) {
   const [showPropose, setShowPropose] = useState(false);
   const [proposeSent, setProposeSent] = useState(false);
   const [selectedSoiree, setSelectedSoiree] = useState(null);
@@ -126,6 +127,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
     await supabase.from('demandes').insert({ soiree_id: selectedSoiree, etablissement_id: userId, artiste_id: a.id, status: 'pending', message: message.trim() || null });
     setSending(false); setProposeSent(true); setShowPropose(false); setMessage(''); setSelectedSoiree(null);
     setTimeout(() => setProposeSent(false), 4000);
+    if(setMyDemandes) setMyDemandes(prev => [...prev, { soiree_id: selectedSoiree, artiste_id: a.id, status: "pending" }]);
   };
  
   const formatD = (d) => { if(!d)return''; const dt=new Date(d+'T00:00:00'); const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc']; return `${dt.getDate()} ${mn[dt.getMonth()]}`; };
@@ -155,10 +157,11 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
       {/* ACTION BUTTONS */}
       <div className="flex gap-2 mt-3">
         <Link href={`/messages?to=${a.id}&name=${encodeURIComponent(a.nom_scene)}`} className="flex-1 text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition text-center">📩 Contacter</Link>
-        {soirees && soirees.length > 0 && !proposeSent && (
+        {availableSoirees.length > 0 && !proposeSent && !alreadyProposed && (
           <button onClick={() => setShowPropose(!showPropose)} className={`flex-1 text-xs py-2.5 rounded-lg border font-medium transition ${showPropose ? 'bg-blue/20 text-blue border-blue/30' : 'bg-blue/10 text-blue border-blue/20 hover:bg-blue/20'}`}>📋 Proposer une soirée</button>
         )}
         {proposeSent && <span className="flex-1 text-xs py-2.5 rounded-lg bg-green-400/10 text-green-400 border border-green-400/20 text-center">✓ Demande envoyée !</span>}
+        {alreadyProposed && !proposeSent && <span className="flex-1 text-xs py-2.5 rounded-lg bg-dim/10 text-dim border border-border text-center">Demande déjà envoyée</span>}
       </div>
  
       {/* PROPOSE PANEL */}
@@ -166,12 +169,12 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
         <div className="mt-3 bg-bg border border-blue/20 rounded-xl p-4 animate-fade-up space-y-3">
           <div className="text-xs font-medium text-blue flex items-center gap-1.5">📋 Choisissez une soirée pour {a.nom_scene}</div>
           <div className="space-y-1.5">
-            {soirees.map(s => (
+            {availableSoirees.map(s => (
               <button key={s.id} onClick={() => setSelectedSoiree(s.id)}
                 className={`w-full text-left text-xs px-3 py-2.5 rounded-lg border transition ${selectedSoiree === s.id ? 'bg-blue/10 border-blue/30 text-blue' : 'border-border hover:bg-bg-card text-muted'}`}>
                 <span className="font-medium">{s.titre}</span>
                 <span className="text-dim ml-2">{formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin}</span>
-                {s.ambiance && <span className="text-dim ml-1">· {s.ambiance}</span>}
+                {s.ambiance && <span className="text-dim ml-1">· {s.ambiance}</span>}{s.cachet && <span className="text-accent ml-1">· {s.cachet}€</span>}
               </button>
             ))}
           </div>
