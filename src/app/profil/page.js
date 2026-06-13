@@ -214,7 +214,7 @@ function ArtistDashboard({data,user,completion,supabase}){
   };
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const stMap={pending:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Nouveau'},accepted:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Accepté'},declined:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Refusé'}};
-  const accepted=demandes.filter(d=>d.status==='accepted');
+  const accepted=demandes.filter(d=>d.status==='accepted').sort((a,b)=>{const da=a.soirees?.date_soiree||'';const db=b.soirees?.date_soiree||'';if(da!==db)return da.localeCompare(db);return(a.soirees?.heure_debut||'').localeCompare(b.soirees?.heure_debut||'');});
   const pending=demandes.filter(d=>d.status==='pending');
  
   return(
