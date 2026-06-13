@@ -89,7 +89,7 @@ function MandatoryRating({ ratings, supabase, userId, role, onComplete }) {
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⭐</div>
           <h1 className="font-display text-2xl font-bold">Comment s&apos;est passée la soirée ?</h1>
-          <p className="text-sm text-muted mt-2">Évaluez {item.targetRole === 'artiste' ? 'l'artiste' : 'l'établissement'} avant d&apos;accéder à votre tableau de bord</p>
+          <p className="text-sm text-muted mt-2">Évaluez {item.targetRole === 'artiste' ? "l'artiste" : "l'établissement"} avant d&apos;accéder à votre tableau de bord</p>
           {ratings.length > 1 && (
             <div className="flex items-center justify-center gap-2 mt-3">
               {ratings.map((_, i) => (
@@ -128,7 +128,7 @@ function MandatoryRating({ ratings, supabase, userId, role, onComplete }) {
             <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Commentaire (optionnel)</label>
             <textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} rows={3}
               className="w-full bg-bg-mid border border-border rounded-lg px-4 py-3 text-sm text-white focus:border-amber-400/50 transition resize-none placeholder:text-dim"
-              placeholder={item.targetRole === 'artiste' ? 'Comment était la prestation ?' : 'Comment était l\'accueil, le lieu, l\'ambiance ?'} />
+              placeholder={item.targetRole === 'artiste' ? "Comment était la prestation ?" : "Comment était l'accueil, le lieu ?"} />
           </div>
  
           <button onClick={submit} disabled={!note || sending}
