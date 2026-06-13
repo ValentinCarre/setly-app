@@ -45,7 +45,19 @@ export default function Explorer() {
         let query = supabase.from('artistes').select('*').order('created_at', { ascending: false });
         if (typeFilter) query = query.eq('type_artiste', typeFilter);
         const { data } = await query;
-        setItems(data || []);
+        // Load ratings for all artists
+        const { data: allAvis } = await supabase.from('avis').select('reviewed_id, note');
+        const ratingsMap = {};
+        (allAvis || []).forEach(a => {
+          if (!ratingsMap[a.reviewed_id]) ratingsMap[a.reviewed_id] = [];
+          ratingsMap[a.reviewed_id].push(a.note);
+        });
+        const withRatings = (data || []).map(artist => ({
+          ...artist,
+          avgRating: ratingsMap[artist.id] ? (ratingsMap[artist.id].reduce((s, n) => s + n, 0) / ratingsMap[artist.id].length).toFixed(1) : null,
+          nbAvis: ratingsMap[artist.id]?.length || 0,
+        }));
+        setItems(withRatings);
       }
       setLoading(false);
     }
@@ -166,7 +178,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden border border-accent/10">{a.photo_url ? <img src={a.photo_url} alt={a.nom_scene} className="w-full h-full object-cover" /> : ARTIST_EMOJIS[a.type_artiste] || '🎵'}</div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-display font-semibold text-lg leading-tight">{a.nom_scene}</h3>
+          <div className="flex items-center gap-2"><h3 className="font-display font-semibold text-lg leading-tight">{a.nom_scene}</h3>{a.avgRating&&<span className="text-xs text-amber-400 font-medium flex items-center gap-0.5">★ {a.avgRating}<span className="text-dim font-normal">({a.nbAvis})</span></span>}</div>
           <p className="text-xs text-accent font-medium mt-0.5">{a.type_artiste} · {a.ville}</p>
           {a.bio && <p className="text-xs text-muted mt-2 line-clamp-2">{a.bio}</p>}
           {a.styles?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2.5">{a.styles.slice(0, 5).map(s => (<span key={s} onClick={() => setStyleFilter(s)} className={`text-[10px] px-2.5 py-0.5 rounded-full cursor-pointer transition ${styleFilter === s ? 'bg-accent/20 border border-accent/40 text-accent font-medium' : 'bg-accent/10 border border-accent/15 text-accent'}`}>{s}</span>))}</div>}
