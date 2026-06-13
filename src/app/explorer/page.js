@@ -178,7 +178,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden border border-accent/10">{a.photo_url ? <img src={a.photo_url} alt={a.nom_scene} className="w-full h-full object-cover" /> : ARTIST_EMOJIS[a.type_artiste] || '🎵'}</div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2"><h3 className="font-display font-semibold text-lg leading-tight">{a.nom_scene}</h3>{a.avgRating&&<span className="text-xs text-amber-400 font-medium flex items-center gap-0.5">★ {a.avgRating}<span className="text-dim font-normal">({a.nbAvis})</span></span>}</div>
+          <div className="flex items-center gap-2"><Link href={`/profil/${a.id}`}><h3 className="font-display font-semibold text-lg leading-tight hover:text-accent transition cursor-pointer">{a.nom_scene}</h3></Link>{a.avgRating&&<span className="text-xs text-amber-400 font-medium flex items-center gap-0.5">★ {a.avgRating}<span className="text-dim font-normal">({a.nbAvis})</span></span>}</div>
           <p className="text-xs text-accent font-medium mt-0.5">{a.type_artiste} · {a.ville}</p>
           {a.bio && <p className="text-xs text-muted mt-2 line-clamp-2">{a.bio}</p>}
           {a.styles?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2.5">{a.styles.slice(0, 5).map(s => (<span key={s} onClick={() => setStyleFilter(s)} className={`text-[10px] px-2.5 py-0.5 rounded-full cursor-pointer transition ${styleFilter === s ? 'bg-accent/20 border border-accent/40 text-accent font-medium' : 'bg-accent/10 border border-accent/15 text-accent'}`}>{s}</span>))}</div>}
@@ -233,7 +233,7 @@ function VenueCard({ v, i }) {
     <div className="bg-bg-card border border-border rounded-2xl overflow-hidden hover:border-blue/20 transition animate-fade-up" style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}>
       {v.photos?.length > 0 ? <div className="h-32 overflow-hidden"><img src={v.photos[0]} alt={v.nom} className="w-full h-full object-cover" /></div> : <div className="h-24 bg-gradient-to-br from-blue/10 to-bg-mid" />}
       <div className="p-5">
-        <h3 className="font-display font-semibold text-lg">{v.nom}</h3>
+        <Link href={`/profil/${v.id}`}><h3 className="font-display font-semibold text-lg hover:text-blue transition cursor-pointer">{v.nom}</h3></Link>
         <p className="text-xs text-dim mt-0.5">📍 {v.adresse || v.ville}</p>
         {v.capacite && <p className="text-xs text-dim mt-0.5">Capacité {v.capacite} pers.</p>}
         {v.type_etablissement?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-3">{v.type_etablissement.map(t => (<span key={t} className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue/10 border border-blue/15 text-blue">{t}</span>))}</div>}
