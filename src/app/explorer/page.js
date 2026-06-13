@@ -97,10 +97,10 @@ export default function Explorer() {
   const addDemande = (d) => setMyDemandes(prev => [...prev, d]);
  
   return (
-    <div className="min-h-screen px-4 py-20">
+    <div className="min-h-screen px-4 py-16 sm:py-20">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8 animate-fade-up">
-          <h1 className="font-display text-3xl md:text-4xl font-bold">{isArtistView ? 'Explorer les artistes' : 'Explorer les établissements'}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold">{isArtistView ? 'Explorer les artistes' : 'Explorer les établissements'}</h1>
           <p className="text-sm text-muted mt-2">{isArtistView ? "Trouvez l'artiste idéal pour votre prochaine soirée" : 'Trouvez des lieux où jouer'}</p>
         </div>
  
