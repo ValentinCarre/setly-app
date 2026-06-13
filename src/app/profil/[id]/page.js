@@ -12,6 +12,7 @@ export default function ProfilPublic() {
   const [avis, setAvis] = useState([]);
   const [pastSoirees, setPastSoirees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [upcomingSoirees, setUpcomingSoirees] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState(null);
   const [isFav, setIsFav] = useState(false);
@@ -56,8 +57,12 @@ export default function ProfilPublic() {
         setProfileData(venue);
         const { data: reviews } = await supabase.from('avis').select('*, soirees(titre, date_soiree)').eq('reviewed_id', id).order('created_at', { ascending: false });
         setAvis(reviews || []);
-        const { data: soirs } = await supabase.from('soirees').select('*').eq('etablissement_id', id).eq('status', 'confirmed');
-        setPastSoirees((soirs || []).filter(s => s.date_soiree < new Date().toISOString().split('T')[0]).sort((a, b) => b.date_soiree.localeCompare(a.date_soiree)));
+        const { data: soirs } = await supabase.from('soirees').select('*').eq('etablissement_id', id);
+        const todayStr = new Date().toISOString().split('T')[0];
+        setPastSoirees((soirs || []).filter(s => s.status === 'confirmed' && s.date_soiree < todayStr).sort((a, b) => b.date_soiree.localeCompare(a.date_soiree)));
+        // Upcoming soirées (draft or confirmed, future dates)
+        const upcoming = (soirs || []).filter(s => s.date_soiree >= todayStr).sort((a, b) => a.date_soiree.localeCompare(b.date_soiree));
+        setUpcomingSoirees(upcoming);
       }
       setLoading(false);
     }
@@ -84,7 +89,7 @@ export default function ProfilPublic() {
   const eqMap = {}; EQUIPEMENTS.forEach(e => { eqMap[e.id] = e; });
  
   if (role === 'artiste') return <ArtistProfile data={profileData} avis={avis} avgRating={avgRating} pastSoirees={pastSoirees} formatD={formatD} isSelf={isSelf} id={id} isFav={isFav} toggleFav={toggleFav} currentUserId={currentUserId} currentUserRole={currentUserRole} mySoirees={mySoirees} supabase={supabase} />;
-  return <VenueProfile data={profileData} avis={avis} avgRating={avgRating} pastSoirees={pastSoirees} formatD={formatD} isSelf={isSelf} id={id} isFav={isFav} toggleFav={toggleFav} currentUserId={currentUserId} eqMap={eqMap} />;
+  return <VenueProfile data={profileData} avis={avis} avgRating={avgRating} pastSoirees={pastSoirees} formatD={formatD} isSelf={isSelf} id={id} isFav={isFav} toggleFav={toggleFav} currentUserId={currentUserId} eqMap={eqMap} upcomingSoirees={upcomingSoirees} currentUserRole={currentUserRole} supabase={supabase} />;
 }
  
 function ArtistProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id, isFav, toggleFav, currentUserId, currentUserRole, mySoirees, supabase }) {
@@ -226,7 +231,73 @@ function ArtistProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id
   );
 }
  
-function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id, isFav, toggleFav, currentUserId, eqMap }) {
+function SoireeCard({ soiree, formatD, currentUserId, currentUserRole, venueId, supabase }) {
+  const [showPostuler, setShowPostuler] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const s = soiree;
+ 
+  const handlePostuler = async () => {
+    if (!currentUserId) return;
+    setSending(true);
+    await supabase.from('demandes').insert({
+      soiree_id: s.id, etablissement_id: venueId, artiste_id: currentUserId,
+      status: 'pending', message: msg.trim() || null, initiated_by: 'artiste',
+    });
+    const convId = [currentUserId, venueId].sort().join('_');
+    const autoMsg = msg.trim()
+      ? `🎤 Candidature pour "${s.titre}" — ${msg.trim()}`
+      : `🎤 Je postule pour votre soirée "${s.titre}" !`;
+    await supabase.from('messages').insert({
+      conversation_id: convId, sender_id: currentUserId, receiver_id: venueId, content: autoMsg, read: false,
+    });
+    setSending(false);
+    setSent(true);
+    setShowPostuler(false);
+    setMsg('');
+  };
+ 
+  const statusLabel = s.status === 'confirmed' ? 'Confirmé' : 'Ouvert';
+  const statusClass = s.status === 'confirmed' ? 'bg-green-400/10 border-green-400/20 text-green-400' : 'bg-accent/10 border-accent/20 text-accent';
+ 
+  return (
+    <div className="bg-bg border border-border rounded-xl p-4">
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <div className="text-sm font-medium">{s.titre}</div>
+          <div className="text-[10px] text-dim mt-0.5">📅 {formatD(s.date_soiree)} · {s.heure_debut}–{s.heure_fin}</div>
+        </div>
+        <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${statusClass}`}>{statusLabel}</span>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {s.ambiance && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue">🎵 {s.ambiance}</span>}
+        {s.cachet && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">💰 {s.cachet}€{s.moyen_paiement ? ` · ${s.moyen_paiement}` : ''}</span>}
+        {s.nb_artistes && <span className="text-[10px] px-2 py-0.5 rounded-full bg-bg-card text-dim">👥 {s.nb_artistes} artiste{s.nb_artistes > 1 ? 's' : ''}</span>}
+      </div>
+      {s.description && <p className="text-xs text-muted mt-2">{s.description}</p>}
+ 
+      {currentUserRole === 'artiste' && s.status === 'draft' && !sent && (
+        <div className="mt-3">
+          {!showPostuler ? (
+            <button onClick={() => setShowPostuler(true)} className="w-full text-xs py-2.5 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition">🎤 Postuler pour cette soirée</button>
+          ) : (
+            <div className="bg-bg-card border border-accent/20 rounded-lg p-3 space-y-2 animate-fade-up">
+              <input value={msg} onChange={e => setMsg(e.target.value)} placeholder="Message personnalisé (optionnel)" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-xs text-white placeholder:text-dim" />
+              <div className="flex gap-2">
+                <button onClick={() => setShowPostuler(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted">Annuler</button>
+                <button onClick={handlePostuler} disabled={sending} className="flex-1 text-xs py-1.5 rounded-lg bg-accent text-black font-medium disabled:opacity-50">{sending ? '...' : '📨 Envoyer ma candidature'}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {sent && <div className="mt-3 text-xs text-center text-green-400 bg-green-400/10 rounded-lg py-2">✓ Candidature envoyée !</div>}
+    </div>
+  );
+}
+ 
+function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id, isFav, toggleFav, currentUserId, eqMap, upcomingSoirees, currentUserRole, supabase }) {
   return (
     <div className="min-h-screen px-4 py-20">
       <div className="max-w-2xl mx-auto">
@@ -250,6 +321,18 @@ function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id,
  
         {/* CONTACT */}
         {!isSelf && currentUserId && <div className="mb-5 animate-fade-up" style={{animationDelay:'0.03s'}}><Link href={`/messages?to=${id}&name=${encodeURIComponent(data.nom)}`} className="w-full text-xs py-3 rounded-xl bg-blue/10 text-blue border border-blue/20 font-medium hover:bg-blue/20 transition block text-center">📩 Contacter {data.nom}</Link></div>}
+ 
+        {/* UPCOMING SOIRÉES */}
+        {upcomingSoirees.length > 0 && (
+          <div className="mb-5 animate-fade-up" style={{animationDelay:'0.04s'}}>
+            <h2 className="text-sm font-medium mb-3">🎵 Soirées à venir ({upcomingSoirees.length})</h2>
+            <div className="space-y-2">
+              {upcomingSoirees.map(s => (
+                <SoireeCard key={s.id} soiree={s} formatD={formatD} currentUserId={currentUserId} currentUserRole={currentUserRole} venueId={id} supabase={supabase} />
+              ))}
+            </div>
+          </div>
+        )}
  
         {data.photos?.length > 1 && <div className="mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}><h2 className="text-sm font-medium mb-2">Photos</h2><div className="flex gap-2 overflow-x-auto pb-1">{data.photos.map((p, i) => (<div key={i} className="w-32 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-bg-card"><img src={p} alt="" className="w-full h-full object-cover" /></div>))}</div></div>}
  
