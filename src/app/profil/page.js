@@ -13,8 +13,133 @@ if(loading)return<div className="min-h-screen flex items-center justify-center">
 if(!profile?.onboarding_done||!data)return(<div className="min-h-screen flex items-center justify-center px-4"><div className="text-center animate-fade-up"><div className="text-5xl mb-4">{profile?.role==='artiste'?'🎧':'🍸'}</div><h2 className="font-display text-xl font-bold mb-2">Profil incomplet</h2><Link href={`/onboarding/${profile?.role==='artiste'?'artiste':'etablissement'}`} className="bg-accent text-black font-bold px-6 py-3 rounded-xl inline-block">Compléter mon profil</Link></div></div>);
 const isArtist=profile.role==='artiste';
 function gc(){if(isArtist){const f=[data.nom_scene,data.ville,data.type_artiste,data.bio,data.photo_url,data.styles?.length>0,data.disponibilites?.length>0,data.soundcloud||data.instagram||data.spotify];return Math.round((f.filter(Boolean).length/f.length)*100);}const f=[data.nom,data.ville,data.adresse,data.type_etablissement?.length>0,data.ambiances?.length>0,data.equipements?.length>0,data.photos?.length>0,data.site_web,data.contact_nom];return Math.round((f.filter(Boolean).length/f.length)*100);}
-if(isArtist)return<ArtistDashboard data={data} user={user} completion={gc()} supabase={supabase}/>;
-return<VenueDashboard data={data} user={user} completion={gc()} supabase={supabase}/>;}
+const[pendingRatings,setPendingRatings]=useState(null);
+  const[ratingsLoaded,setRatingsLoaded]=useState(false);
+ 
+  useEffect(()=>{
+    if(!user||!data||!profile)return;
+    async function checkRatings(){
+      const todayStr=new Date().toISOString().split('T')[0];
+      const{data:myReviews}=await supabase.from('avis').select('soiree_id,reviewed_id').eq('reviewer_id',user.id);
+      const reviewedPairs=(myReviews||[]).map(r=>r.soiree_id+'_'+r.reviewed_id);
+ 
+      if(isArtist){
+        const{data:dems}=await supabase.from('demandes').select('*, soirees(*), etablissements:etablissement_id(nom, photos, ville)').eq('artiste_id',user.id).eq('status','accepted');
+        const toRate=(dems||[]).filter(d=>d.soirees&&d.soirees.date_soiree<todayStr&&!reviewedPairs.includes(d.soiree_id+'_'+d.soirees.etablissement_id)).map(d=>({soireeId:d.soiree_id,soiree:d.soirees,targetId:d.soirees.etablissement_id,targetName:d.etablissements?.nom||'Établissement',targetRole:'etablissement'}));
+        setPendingRatings(toRate);
+      } else {
+        const{data:soirs}=await supabase.from('soirees').select('*').eq('etablissement_id',user.id).eq('status','confirmed');
+        const pastSoirs=(soirs||[]).filter(s=>s.date_soiree<todayStr);
+        const toRate=[];
+        for(const s of pastSoirs){
+          const{data:dems}=await supabase.from('demandes').select('artiste_id, artistes:artiste_id(nom_scene, type_artiste, photo_url)').eq('soiree_id',s.id).eq('status','accepted');
+          (dems||[]).forEach(d=>{if(!reviewedPairs.includes(s.id+'_'+d.artiste_id)){toRate.push({soireeId:s.id,soiree:s,targetId:d.artiste_id,targetName:d.artistes?.nom_scene||'Artiste',targetRole:'artiste'});}});
+        }
+        setPendingRatings(toRate);
+      }
+      setRatingsLoaded(true);
+    }
+    checkRatings();
+  },[user,data,profile]);
+ 
+  if(!ratingsLoaded)return<div className="min-h-screen flex items-center justify-center"><div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin"/></div>;
+ 
+  if(pendingRatings&&pendingRatings.length>0)return<MandatoryRating ratings={pendingRatings} supabase={supabase} userId={user.id} role={profile.role} onComplete={()=>setPendingRatings([])} />;
+ 
+  if(isArtist)return<ArtistDashboard data={data} user={user} completion={gc()} supabase={supabase}/>;
+  return<VenueDashboard data={data} user={user} completion={gc()} supabase={supabase}/>;}
+ 
+function MandatoryRating({ ratings, supabase, userId, role, onComplete }) {
+  const [current, setCurrent] = useState(0);
+  const [note, setNote] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [commentaire, setCommentaire] = useState('');
+  const [sending, setSending] = useState(false);
+ 
+  const item = ratings[current];
+  const isLast = current === ratings.length - 1;
+  const color = role === 'artiste' ? 'accent' : 'blue';
+ 
+  const formatDM = (d) => { if (!d) return ''; const dt = new Date(d + 'T00:00:00'); const mn = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']; return `${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`; };
+ 
+  const submit = async () => {
+    if (!note) return;
+    setSending(true);
+    await supabase.from('avis').insert({
+      soiree_id: item.soireeId,
+      reviewer_id: userId,
+      reviewed_id: item.targetId,
+      note,
+      commentaire: commentaire.trim() || null,
+    });
+    setSending(false);
+    setNote(0);
+    setHover(0);
+    setCommentaire('');
+    if (isLast) {
+      onComplete();
+    } else {
+      setCurrent(prev => prev + 1);
+    }
+  };
+ 
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-20">
+      <div className="max-w-md w-full animate-fade-up">
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-3">⭐</div>
+          <h1 className="font-display text-2xl font-bold">Comment s&apos;est passée la soirée ?</h1>
+          <p className="text-sm text-muted mt-2">Évaluez {item.targetRole === 'artiste' ? 'l'artiste' : 'l'établissement'} avant d&apos;accéder à votre tableau de bord</p>
+          {ratings.length > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {ratings.map((_, i) => (
+                <div key={i} className={`w-2 h-2 rounded-full transition ${i === current ? (role === 'artiste' ? 'bg-accent' : 'bg-blue') : i < current ? 'bg-green-400' : 'bg-dim/30'}`} />
+              ))}
+              <span className="text-[10px] text-dim ml-1">{current + 1}/{ratings.length}</span>
+            </div>
+          )}
+        </div>
+ 
+        <div className="bg-bg-card border border-border rounded-2xl p-6 space-y-5">
+          <div className="text-center">
+            <div className="text-lg font-semibold">{item.targetName}</div>
+            <div className="text-xs text-dim mt-1">{item.targetRole === 'artiste' ? '🎧 Artiste' : '🍸 Établissement'}</div>
+            <div className={`text-xs mt-2 px-3 py-1.5 rounded-lg bg-bg-mid inline-block`}>
+              🎵 {item.soiree.titre} · {formatDM(item.soiree.date_soiree)}
+            </div>
+          </div>
+ 
+          <div className="text-center">
+            <div className="text-xs text-dim uppercase tracking-wider font-medium mb-3">Votre note *</div>
+            <div className="flex items-center justify-center gap-2">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)} onClick={() => setNote(n)}
+                  className={`text-4xl transition-transform hover:scale-110 ${n <= (hover || note) ? 'text-amber-400' : 'text-dim/20'}`}>★</button>
+              ))}
+            </div>
+            {note > 0 && (
+              <div className="text-sm text-amber-400 font-medium mt-2">
+                {note === 1 ? 'Décevant' : note === 2 ? 'Moyen' : note === 3 ? 'Bien' : note === 4 ? 'Très bien' : 'Excellent'} — {note}/5
+              </div>
+            )}
+          </div>
+ 
+          <div>
+            <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Commentaire (optionnel)</label>
+            <textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} rows={3}
+              className="w-full bg-bg-mid border border-border rounded-lg px-4 py-3 text-sm text-white focus:border-amber-400/50 transition resize-none placeholder:text-dim"
+              placeholder={item.targetRole === 'artiste' ? 'Comment était la prestation ?' : 'Comment était l\'accueil, le lieu, l\'ambiance ?'} />
+          </div>
+ 
+          <button onClick={submit} disabled={!note || sending}
+            className={`w-full font-bold py-3.5 rounded-xl transition disabled:opacity-30 ${note ? 'bg-amber-400 text-black hover:shadow-lg hover:shadow-amber-400/25' : 'bg-bg-mid text-dim'}`}>
+            {sending ? 'Envoi...' : !note ? '⭐ Sélectionnez une note pour continuer' : isLast ? '✓ Envoyer et accéder au tableau de bord' : `⭐ Envoyer et passer au suivant (${current + 2}/${ratings.length})`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
  
 function ArtistDashboard({data,user,completion,supabase}){
   const[datesDispo,setDatesDispo]=useState(data.dates_dispo||[]);
