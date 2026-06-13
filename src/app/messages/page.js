@@ -18,6 +18,7 @@ function MessagesContent() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contactProfiles, setContactProfiles] = useState({});
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const bottomRef = useRef(null);
   const router = useRouter();
   const supabase = createClient();
@@ -50,6 +51,7 @@ function MessagesContent() {
       }
       setContactProfiles(profiles);
       if (targetId) {
+        setMobileShowChat(true);
         const existingConv = convList.find(c => c.otherId === targetId);
         if (existingConv) { setActiveConv(existingConv.id); setMessages(existingConv.messages); }
         else { const convId = [user.id, targetId].sort().join('_'); setActiveConv(convId); setMessages([]); }
@@ -76,7 +78,7 @@ function MessagesContent() {
     }
   }, [activeConv, messages.length]);
  
-  const openConversation = (conv) => { setActiveConv(conv.id); setMessages(conv.messages); };
+  const openConversation = (conv) => { setActiveConv(conv.id); setMessages(conv.messages); setMobileShowChat(true); };
  
   const deleteConversation = async (convId) => {
     if (!confirm('Supprimer cette conversation ? Tous les messages seront perdus.')) return;
@@ -116,12 +118,12 @@ function MessagesContent() {
   const activeOtherId = activeConv?.includes('_') ? activeConv.split('_').find(id => id !== user?.id) : conversations.find(c => c.id === activeConv)?.otherId;
  
   return (
-    <div className="min-h-screen px-4 py-20">
+    <div className="min-h-screen px-4 py-16 sm:py-20">
       <div className="max-w-4xl mx-auto animate-fade-up">
         <h1 className="font-display text-2xl font-bold mb-5 flex items-center gap-2">💬 Messages</h1>
-        <div className="grid md:grid-cols-[280px_1fr] gap-4" style={{ minHeight: '500px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4" style={{ minHeight: '400px' }}>
           {/* LIST */}
-          <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+          <div className={`bg-bg-card border border-border rounded-xl overflow-hidden ${mobileShowChat ? "hidden md:block" : ""}`}>
             <div className="p-3 border-b border-border"><div className="text-xs text-dim font-medium uppercase tracking-wider">Conversations</div></div>
             {conversations.length === 0 && !targetId ? (
               <div className="p-6 text-center"><div className="text-3xl mb-2">📭</div><p className="text-xs text-dim">Aucune conversation</p><Link href="/explorer" className="text-xs text-accent hover:underline mt-2 inline-block">Explorer</Link></div>
@@ -149,7 +151,7 @@ function MessagesContent() {
             )}
           </div>
           {/* CHAT */}
-          <div className="bg-bg-card border border-border rounded-xl flex flex-col overflow-hidden">
+          <div className={`bg-bg-card border border-border rounded-xl flex flex-col overflow-hidden ${!mobileShowChat && !activeConv ? "hidden md:flex" : ""}`}>
             {activeConv && activeOtherId ? (<>
               <div className="flex items-center gap-3 p-4 border-b border-border">
                 <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-base overflow-hidden flex-shrink-0">{getPhoto(activeOtherId)?<img src={getPhoto(activeOtherId)} alt="" className="w-full h-full object-cover"/>:(getRole(activeOtherId)==='artiste'?'🎧':'🍸')}</div>
