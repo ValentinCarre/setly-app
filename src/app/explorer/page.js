@@ -20,6 +20,7 @@ export default function Explorer() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [mySoirees, setMySoirees] = useState([]);
   const [myDemandes, setMyDemandes] = useState([]);
+  const [favIds, setFavIds] = useState([]);
   const supabase = createClient();
  
   useEffect(() => {
@@ -35,12 +36,18 @@ export default function Explorer() {
           setMySoirees(soirs || []);
           const { data: dems } = await supabase.from('demandes').select('soiree_id, artiste_id, status').eq('etablissement_id', user.id);
           setMyDemandes(dems || []);
+          const { data: favs } = await supabase.from('favoris').select('favorited_id').eq('user_id', user.id);
+          setFavIds((favs || []).map(f => f.favorited_id));
         }
       }
       setUserRole(role);
       if (role === 'artiste') {
         const { data } = await supabase.from('etablissements').select('*').order('created_at', { ascending: false });
         setItems(data || []);
+        if (user) {
+          const { data: favs } = await supabase.from('favoris').select('favorited_id').eq('user_id', user.id);
+          setFavIds((favs || []).map(f => f.favorited_id));
+        }
       } else {
         let query = supabase.from('artistes').select('*').order('created_at', { ascending: false });
         if (typeFilter) query = query.eq('type_artiste', typeFilter);
@@ -138,15 +145,17 @@ export default function Explorer() {
         {loading ? <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /></div>
           : filtered.length === 0 ? <div className="text-center py-20"><div className="text-5xl mb-4">{isArtistView ? '🎵' : '🏪'}</div><h3 className="font-display text-lg font-semibold mb-2">Aucun résultat</h3><button onClick={() => { setSearch(''); setTypeFilter(''); setStyleFilter(''); setVilleFilter(''); setDispoFilter(''); setDateFilter([]); }} className="text-sm text-accent hover:underline">Tout afficher</button></div>
             : <div className="grid md:grid-cols-2 gap-4">{filtered.map((item, i) => isArtistView
-              ? <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dateFilter={dateFilter} soirees={mySoirees} supabase={supabase} userId={userId} existingDemandes={myDemandes} addDemande={addDemande} />
-              : <VenueCard key={item.id} v={item} i={i} />
+              ? <ArtistCard key={item.id} a={item} i={i} styleFilter={styleFilter} setStyleFilter={setStyleFilter} dateFilter={dateFilter} soirees={mySoirees} supabase={supabase} userId={userId} existingDemandes={myDemandes} addDemande={addDemande} favIds={favIds} setFavIds={setFavIds} />
+              : <VenueCard key={item.id} v={item} i={i} userId={userId} supabase={supabase} favIds={favIds} setFavIds={setFavIds} />
             )}</div>}
       </div>
     </div>
   );
 }
  
-function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, supabase, userId, existingDemandes, addDemande }) {
+function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, supabase, userId, existingDemandes, addDemande, favIds, setFavIds }) {
+  const isFav = favIds.includes(a.id);
+  const toggleFav = async () => { if (!userId) return; if (isFav) { await supabase.from('favoris').delete().eq('user_id', userId).eq('favorited_id', a.id); setFavIds(prev => prev.filter(x => x !== a.id)); } else { await supabase.from('favoris').insert({ user_id: userId, favorited_id: a.id }); setFavIds(prev => [...prev, a.id]); } };
   const [showPropose, setShowPropose] = useState(false);
   const [proposeSent, setProposeSent] = useState(false);
   const [selectedSoiree, setSelectedSoiree] = useState(null);
@@ -178,7 +187,7 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
       <div className="flex items-start gap-4">
         <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden border border-accent/10">{a.photo_url ? <img src={a.photo_url} alt={a.nom_scene} className="w-full h-full object-cover" /> : ARTIST_EMOJIS[a.type_artiste] || '🎵'}</div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2"><Link href={`/profil/${a.id}`}><h3 className="font-display font-semibold text-lg leading-tight hover:text-accent transition cursor-pointer">{a.nom_scene}</h3></Link>{a.avgRating&&<span className="text-xs text-amber-400 font-medium flex items-center gap-0.5">★ {a.avgRating}<span className="text-dim font-normal">({a.nbAvis})</span></span>}</div>
+          <div className="flex items-center gap-2"><Link href={`/profil/${a.id}`}><h3 className="font-display font-semibold text-lg leading-tight hover:text-accent transition cursor-pointer">{a.nom_scene}</h3></Link>{a.avgRating&&<span className="text-xs text-amber-400 font-medium flex items-center gap-0.5">★ {a.avgRating}<span className="text-dim font-normal">({a.nbAvis})</span></span>}{userId&&<button onClick={toggleFav} className={`ml-auto text-lg transition hover:scale-110 ${isFav?'text-red-400':'text-dim/20 hover:text-red-400/50'}`}>{isFav?'❤️':'🤍'}</button>}</div>
           <p className="text-xs text-accent font-medium mt-0.5">{a.type_artiste} · {a.ville}</p>
           {a.bio && <p className="text-xs text-muted mt-2 line-clamp-2">{a.bio}</p>}
           {a.styles?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2.5">{a.styles.slice(0, 5).map(s => (<span key={s} onClick={() => setStyleFilter(s)} className={`text-[10px] px-2.5 py-0.5 rounded-full cursor-pointer transition ${styleFilter === s ? 'bg-accent/20 border border-accent/40 text-accent font-medium' : 'bg-accent/10 border border-accent/15 text-accent'}`}>{s}</span>))}</div>}
@@ -228,12 +237,14 @@ function ArtistCard({ a, i, styleFilter, setStyleFilter, dateFilter, soirees, su
   );
 }
  
-function VenueCard({ v, i }) {
+function VenueCard({ v, i, userId, supabase, favIds, setFavIds }) {
+  const isFav = (favIds||[]).includes(v.id);
+  const toggleFav = async () => { if (!userId) return; if (isFav) { await supabase.from('favoris').delete().eq('user_id', userId).eq('favorited_id', v.id); setFavIds(prev => prev.filter(x => x !== v.id)); } else { await supabase.from('favoris').insert({ user_id: userId, favorited_id: v.id }); setFavIds(prev => [...prev, v.id]); } };
   return (
     <div className="bg-bg-card border border-border rounded-2xl overflow-hidden hover:border-blue/20 transition animate-fade-up" style={{ animationDelay: `${Math.min(i * 0.05, 0.5)}s` }}>
       {v.photos?.length > 0 ? <div className="h-32 overflow-hidden"><img src={v.photos[0]} alt={v.nom} className="w-full h-full object-cover" /></div> : <div className="h-24 bg-gradient-to-br from-blue/10 to-bg-mid" />}
       <div className="p-5">
-        <Link href={`/profil/${v.id}`}><h3 className="font-display font-semibold text-lg hover:text-blue transition cursor-pointer">{v.nom}</h3></Link>
+        <div className="flex items-center justify-between"><Link href={`/profil/${v.id}`}><h3 className="font-display font-semibold text-lg hover:text-blue transition cursor-pointer">{v.nom}</h3></Link>{userId&&<button onClick={toggleFav} className={`text-lg transition hover:scale-110 ${isFav?'text-red-400':'text-dim/20 hover:text-red-400/50'}`}>{isFav?'❤️':'🤍'}</button>}</div>
         <p className="text-xs text-dim mt-0.5">📍 {v.adresse || v.ville}</p>
         {v.capacite && <p className="text-xs text-dim mt-0.5">Capacité {v.capacite} pers.</p>}
         {v.type_etablissement?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-3">{v.type_etablissement.map(t => (<span key={t} className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue/10 border border-blue/15 text-blue">{t}</span>))}</div>}
