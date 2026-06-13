@@ -52,7 +52,7 @@ export default function Favoris() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" /></div>;
  
   return (
-    <div className="min-h-screen px-4 py-20">
+    <div className="min-h-screen px-4 py-16 sm:py-20">
       <div className="max-w-3xl mx-auto">
         <h1 className="font-display text-2xl font-bold mb-5 flex items-center gap-2 animate-fade-up">❤️ Mes favoris</h1>
  
