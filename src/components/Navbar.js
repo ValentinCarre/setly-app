@@ -109,6 +109,7 @@ export default function Navbar() {
                       <span>💬</span> Messages
                       {unreadCount > 0 && <span className="ml-auto min-w-[18px] h-[18px] bg-accent text-black text-[10px] font-bold rounded-full flex items-center justify-center px-1">{unreadCount}</span>}
                     </Link>
+                    <Link href="/favoris" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted hover:bg-bg-hover hover:text-white transition"><span>❤️</span> Favoris</Link>
                     <Link href="/explorer" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted hover:bg-bg-hover hover:text-white transition md:hidden"><span>🔍</span> Explorer</Link>
                     <hr className="border-border my-1" />
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-400/10 transition"><span>🚪</span> Déconnexion</button>
