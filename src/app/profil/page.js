@@ -218,7 +218,7 @@ function ArtistDashboard({data,user,completion,supabase}){
   const pending=demandes.filter(d=>d.status==='pending');
  
   return(
-    <div className="min-h-screen px-4 py-20"><div className="max-w-2xl mx-auto">
+    <div className="min-h-screen px-4 py-16 sm:py-20"><div className="max-w-2xl mx-auto">
       {/* TOP BAR */}
       <div className="flex items-center justify-between pb-4 border-b border-border mb-5 animate-fade-up">
         <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ function ArtistDashboard({data,user,completion,supabase}){
       </div>
  
       {/* STATS */}
-      <div className="grid grid-cols-4 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-accent">{pending.length}</div><div className="text-[11px] text-dim mt-1">En attente</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{accepted.length}</div><div className="text-[11px] text-dim mt-1">Acceptées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{matchingSoirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées dispo</div></div>
@@ -371,7 +371,7 @@ function VenueDashboard({data,user,completion,supabase}){
   const sc={draft:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Cherche artiste'},confirmed:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Confirmé'},cancelled:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Annulé'}};
  
   return(
-    <div className="min-h-screen px-4 py-20"><div className="max-w-2xl mx-auto">
+    <div className="min-h-screen px-4 py-16 sm:py-20"><div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between pb-4 border-b border-border mb-5 animate-fade-up">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue/20 to-bg-mid flex items-center justify-center text-xl border-2 border-blue/20 overflow-hidden">{data.photos?.length>0?<img src={data.photos[0]} alt="" className="w-full h-full object-cover"/>:<span>🍸</span>}</div>
@@ -380,7 +380,7 @@ function VenueDashboard({data,user,completion,supabase}){
         <div className="flex gap-2"><Link href="/messages" className="w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center text-muted hover:text-white transition">💬</Link><Link href="/onboarding/etablissement" className="w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center text-muted hover:text-white transition">⚙️</Link></div>
       </div>
  
-      <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{soirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{soirees.filter(s=>s.status==='confirmed').length}</div><div className="text-[11px] text-dim mt-1">Confirmées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</div>
