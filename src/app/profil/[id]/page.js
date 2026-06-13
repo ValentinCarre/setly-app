@@ -11,6 +11,8 @@ export default function ProfilPublic() {
   const [role, setRole] = useState(null);
   const [avis, setAvis] = useState([]);
   const [pastSoirees, setPastSoirees] = useState([]);
+  const [upcomingSoirees, setUpcomingSoirees] = useState([]);
+  const [myDemandesSoireeIds, setMyDemandesSoireeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [upcomingSoirees, setUpcomingSoirees] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -113,7 +115,7 @@ function ArtistProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id
   const fmtD = (d) => { if (!d) return ''; const dt = new Date(d + 'T00:00:00'); const mn = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin']; return `${dt.getDate()} ${mn[dt.getMonth()]}`; };
  
   return (
-    <div className="min-h-screen px-4 py-20">
+    <div className="min-h-screen px-4 py-16 sm:py-20">
       <div className="max-w-2xl mx-auto">
         {/* HERO */}
         <div className="bg-bg-card border border-border rounded-2xl overflow-hidden mb-5 animate-fade-up">
@@ -297,9 +299,77 @@ function SoireeCard({ soiree, formatD, currentUserId, currentUserRole, venueId, 
   );
 }
  
+function SoireeApplyCard({ soiree, dt, alreadyApplied, currentUserId, currentUserRole, etablissementId, supabase, onApplied }) {
+  const [showForm, setShowForm] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+ 
+  const handlePostuler = async () => {
+    setSending(true);
+    await supabase.from('demandes').insert({
+      soiree_id: soiree.id,
+      etablissement_id: etablissementId,
+      artiste_id: currentUserId,
+      status: 'pending',
+      message: msg.trim() || null,
+      initiated_by: 'artiste',
+    });
+    const convId = [currentUserId, etablissementId].sort().join('_');
+    await supabase.from('messages').insert({
+      conversation_id: convId,
+      sender_id: currentUserId,
+      receiver_id: etablissementId,
+      content: msg.trim() ? `🎤 Candidature pour "${soiree.titre}" — ${msg.trim()}` : `🎤 Je postule pour votre soirée "${soiree.titre}" !`,
+      read: false,
+    });
+    setSending(false);
+    setSent(true);
+    onApplied();
+  };
+ 
+  const mn = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+ 
+  if (sent || alreadyApplied) return (
+    <div className="bg-bg border border-green-400/20 rounded-xl p-4 flex items-center gap-4">
+      <div className="text-center w-12 flex-shrink-0"><div className="text-lg font-semibold">{dt.getDate()}</div><div className="text-[9px] text-dim uppercase">{mn[dt.getMonth()]}</div></div>
+      <div className="flex-1"><div className="text-sm font-medium">{soiree.titre}</div><div className="text-[10px] text-dim">{soiree.heure_debut}–{soiree.heure_fin}{soiree.ambiance && ` · ${soiree.ambiance}`}{soiree.cachet && ` · ${soiree.cachet}€`}</div></div>
+      <span className="text-xs text-green-400 flex-shrink-0">✓ Candidature envoyée</span>
+    </div>
+  );
+ 
+  return (
+    <div className="bg-bg border border-border rounded-xl p-4">
+      <div className="flex items-center gap-4">
+        <div className="text-center w-12 flex-shrink-0"><div className="text-lg font-semibold">{dt.getDate()}</div><div className="text-[9px] text-dim uppercase">{mn[dt.getMonth()]}</div></div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium">{soiree.titre}</div>
+          <div className="text-[10px] text-dim">{soiree.heure_debut}–{soiree.heure_fin}{soiree.ambiance && ` · ${soiree.ambiance}`}</div>
+          <div className="flex items-center gap-2 mt-1">
+            {soiree.cachet && <span className="text-[10px] text-accent font-medium">💰 {soiree.cachet}€{soiree.moyen_paiement && ` · ${soiree.moyen_paiement}`}</span>}
+            {soiree.nb_artistes && soiree.nb_artistes > 1 && <span className="text-[10px] text-dim">{soiree.nb_artistes} artistes recherchés</span>}
+          </div>
+        </div>
+        {currentUserRole === 'artiste' && currentUserId && !showForm && (
+          <button onClick={() => setShowForm(true)} className="text-xs px-3 py-2 rounded-lg bg-accent/10 text-accent border border-accent/20 font-medium hover:bg-accent/20 transition flex-shrink-0">Postuler</button>
+        )}
+      </div>
+      {showForm && (
+        <div className="mt-3 pt-3 border-t border-border animate-fade-up space-y-2">
+          <input value={msg} onChange={e => setMsg(e.target.value)} placeholder="Message personnalisé (optionnel)" className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-xs text-white focus:border-accent transition placeholder:text-dim" />
+          <div className="flex gap-2">
+            <button onClick={() => { setShowForm(false); setMsg(''); }} className="text-xs px-4 py-2 rounded-lg border border-border text-muted">Annuler</button>
+            <button onClick={handlePostuler} disabled={sending} className="flex-1 text-xs py-2 rounded-lg bg-accent text-black font-medium disabled:opacity-50">{sending ? '...' : '📨 Envoyer ma candidature'}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ 
 function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id, isFav, toggleFav, currentUserId, eqMap, upcomingSoirees, currentUserRole, supabase }) {
   return (
-    <div className="min-h-screen px-4 py-20">
+    <div className="min-h-screen px-4 py-16 sm:py-20">
       <div className="max-w-2xl mx-auto">
         <div className="bg-bg-card border border-border rounded-2xl overflow-hidden mb-5 animate-fade-up">
           {data.photos?.length > 0 ? <div className="h-48 overflow-hidden"><img src={data.photos[0]} alt={data.nom} className="w-full h-full object-cover" /></div> : <div className="h-32 bg-gradient-to-br from-blue/20 via-blue/5 to-bg-mid" />}
@@ -343,6 +413,20 @@ function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id,
         {data.equipements?.length > 0 && <div className="mb-5 animate-fade-up" style={{animationDelay:'0.12s'}}><h2 className="text-sm font-medium mb-2">Équipement</h2><div className="flex flex-wrap gap-2">{data.equipements.map(eq => { const e = eqMap[eq]; return <span key={eq} className="text-xs px-3 py-1.5 rounded-full bg-bg-hover text-muted">{e?.icon} {e?.label || eq}</span>; })}</div></div>}
  
         {data.site_web && <div className="mb-5 animate-fade-up" style={{animationDelay:'0.14s'}}><a href={data.site_web.startsWith('http') ? data.site_web : `https://${data.site_web}`} target="_blank" className="inline-flex items-center gap-2 text-xs px-4 py-2.5 rounded-lg bg-blue/10 border border-blue/15 text-blue hover:bg-blue/20 transition">🌐 {data.site_web}</a></div>}
+ 
+        {/* UPCOMING SOIRÉES */}
+        {upcomingSoirees && upcomingSoirees.length > 0 && (
+          <div className="mb-5 animate-fade-up" style={{animationDelay:'0.15s'}}>
+            <h2 className="text-sm font-medium mb-3">🎵 Soirées à venir ({upcomingSoirees.length})</h2>
+            <div className="space-y-2">{upcomingSoirees.map(s => {
+              const dt = new Date(s.date_soiree + 'T00:00:00');
+              const alreadyApplied = (myDemandesSoireeIds || []).includes(s.id);
+              return (
+                <SoireeApplyCard key={s.id} soiree={s} dt={dt} alreadyApplied={alreadyApplied} currentUserId={currentUserId} currentUserRole={currentUserRole} etablissementId={id} supabase={supabase} onApplied={() => setMyDemandesSoireeIds(prev => [...prev, s.id])} />
+              );
+            })}</div>
+          </div>
+        )}
  
         {pastSoirees.length > 0 && <div className="mb-5 animate-fade-up" style={{animationDelay:'0.16s'}}><h2 className="text-sm font-medium mb-2">Soirées organisées ({pastSoirees.length})</h2><div className="space-y-2">{pastSoirees.slice(0, 6).map((s, i) => (<div key={i} className="bg-bg border border-border rounded-lg p-3 flex items-center gap-3"><div className="text-center w-10 flex-shrink-0"><div className="text-sm font-semibold">{new Date(s.date_soiree + 'T00:00:00').getDate()}</div><div className="text-[9px] text-dim uppercase">{['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'][new Date(s.date_soiree + 'T00:00:00').getMonth()]}</div></div><div className="flex-1"><div className="text-xs font-medium">{s.titre}</div><div className="text-[10px] text-dim">{s.ambiance} · {s.heure_debut}–{s.heure_fin}</div></div></div>))}</div></div>}
  
