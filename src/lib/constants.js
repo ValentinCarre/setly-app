@@ -12,7 +12,7 @@ export const VENUE_TYPES = ['Bar', 'Café', 'Restaurant', 'Club', 'Rooftop', 'Po
  
 export const AMBIANCES = [
   'House', 'Deep House', 'Tech House', 'Afro House', 'Progressive House',
-'Techno', 'Hard Techno', 'Melodic Techno', 'Minimal', 'Bounce', 'Raw', 'Indus', 'Hard Trans'
+  'Techno', 'Hard Techno', 'Melodic Techno', 'Minimal', 'Bounce', 'Raw', 'Indus', 'Hard Trance',
   'Électro', 'EDM', 'Trance', 'Drum & Bass',
   'Disco', 'Nu-Disco', 'Funk',
   'Jazz', 'Soul', 'Blues', 'Swing',
