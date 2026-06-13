@@ -268,10 +268,10 @@ function ArtistDashboard({data,user,completion,supabase}){
  
       {/* DEMANDES */}
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.12s'}}>
-        <h2 className="text-sm font-medium flex items-center gap-2 mb-3">📩 Demandes reçues {pending.length>0&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">{pending.length} nouvelle{pending.length>1?'s':''}</span>}</h2>
+        <h2 className="text-sm font-medium flex items-center gap-2 mb-3">📩 Demandes en attente {pending.length>0&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">{pending.length}</span>}</h2>
         {loadingData?<div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin"/></div>:
-        demandes.length===0?<div className="bg-bg border border-border rounded-xl p-6 text-center"><div className="text-3xl mb-2">📭</div><p className="text-xs text-dim">Aucune demande pour le moment</p></div>:
-        <div className="space-y-2">{demandes.map(d=>{const st=stMap[d.status]||stMap.pending;const s=d.soirees;const e=d.etablissements;return(
+        pending.length===0?<div className="bg-bg border border-border rounded-xl p-6 text-center"><div className="text-3xl mb-2">✅</div><p className="text-xs text-dim">Aucune demande en attente</p></div>:
+        <div className="space-y-2">{pending.map(d=>{const st=stMap[d.status]||stMap.pending;const s=d.soirees;const e=d.etablissements;return(
           <div key={d.id} className="bg-bg border border-border rounded-xl p-4 hover:border-dim transition">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-blue/10 flex items-center justify-center text-lg overflow-hidden">{e?.photos?.[0]?<img src={e.photos[0]} alt="" className="w-full h-full object-cover"/>:'🍸'}</div>
