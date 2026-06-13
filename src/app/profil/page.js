@@ -50,7 +50,8 @@ function ArtistDashboard({data,user,completion,supabase}){
         setMatchingSoirees(matching.filter(s => !demandesSoireeIds.includes(s.id)));
       }
       // Load past confirmed soirées to rate
-      const pastAccepted=(dems||[]).filter(d=>d.status==='accepted'&&d.soirees&&new Date(d.soirees.date_soiree+'T23:59:59')<new Date());
+      const today=new Date().toISOString().split('T')[0];
+      const pastAccepted=(dems||[]).filter(d=>d.status==='accepted'&&d.soirees&&d.soirees.date_soiree<today);
       // Load existing avis by this artist
       const{data:myReviews}=await supabase.from('avis').select('*').eq('reviewer_id',user.id);
       setMyAvis(myReviews||[]);
@@ -228,11 +229,12 @@ function VenueDashboard({data,user,completion,supabase}){
       const{data:cands}=await supabase.from('demandes').select('*, soirees(*), artistes:artiste_id(nom_scene, type_artiste, photo_url, ville, styles)').eq('etablissement_id',user.id).eq('initiated_by','artiste').order('created_at',{ascending:false});
       setCandidatures(cands||[]);
       // Load past soirées to rate (confirmed + date passed)
-      const pastSoirees=res.filter(s=>s.status==='confirmed'&&new Date(s.date_soiree+'T23:59:59')<new Date()&&s.demandes.some(d=>d.status==='accepted'));
+      const todayStr=new Date().toISOString().split('T')[0];
+      const pastSoirees=res.filter(s=>s.status==='confirmed'&&s.date_soiree<todayStr&&s.demandes.some(d=>d.status==='accepted'));
       const{data:myReviews}=await supabase.from('avis').select('*').eq('reviewer_id',user.id);
       const reviewedPairs=(myReviews||[]).map(r=>r.soiree_id+'_'+r.reviewed_id);
       const toRate=[];
-      pastSoirees.forEach(s=>{s.demandes.filter(d=>d.status==='accepted').forEach(d=>{if(!reviewedPairs.includes(s.id+'_'+d.artistes?.id)){toRate.push({soiree:s,artiste:d.artistes,artisteId:d.artiste_id});}});});
+      pastSoirees.forEach(s=>{s.demandes.filter(d=>d.status==='accepted').forEach(d=>{if(!reviewedPairs.includes(s.id+'_'+d.artiste_id)){toRate.push({soiree:s,artiste:d.artistes,artisteId:d.artiste_id});}});});
       setSoireesToRate(toRate);
       // Received ratings
       const{data:receivedAvis}=await supabase.from('avis').select('note').eq('reviewed_id',user.id);
