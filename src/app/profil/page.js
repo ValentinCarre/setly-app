@@ -305,7 +305,7 @@ function ArtistDashboard({data,user,completion,supabase}){
  
       {/* PROFILE */}
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.2s'}}>
-        <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">👤 Mon profil</h2><Link href="/onboarding/artiste" className="text-xs text-dim hover:text-muted">Modifier</Link></div>
+        <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">👤 Mon profil</h2><Link href="/onboarding/artiste" className="text-xs text-dim hover:text-muted flex items-center gap-1">✏️ Modifier</Link></div>
         <div className="bg-bg border border-border rounded-xl p-4 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent/20 to-bg-mid flex items-center justify-center text-2xl overflow-hidden flex-shrink-0 border-2 border-accent/15">{data.photo_url?<img src={data.photo_url} alt="" className="w-full h-full object-cover"/>:<span>{ARTIST_EMOJIS[data.type_artiste]||'🎵'}</span>}</div>
           <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{data.nom_scene}</div><div className="text-xs text-accent mt-0.5">{data.type_artiste} · {data.ville}</div>{data.styles?.length>0&&<div className="flex gap-1.5 mt-2 flex-wrap">{data.styles.slice(0,4).map(s=>(<span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 border border-accent/15 text-accent">{s}</span>))}</div>}</div>
@@ -433,7 +433,7 @@ function VenueDashboard({data,user,completion,supabase}){
       )}
  
       <div className="mb-5 animate-fade-up" style={{animationDelay:'0.2s'}}>
-        <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">🏪 Ma fiche</h2><Link href="/onboarding/etablissement" className="text-xs text-dim hover:text-muted">Modifier</Link></div>
+        <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-medium flex items-center gap-2">🏪 Ma fiche</h2><Link href="/onboarding/etablissement" className="text-xs text-dim hover:text-muted flex items-center gap-1">✏️ Modifier</Link></div>
         <div className="bg-bg border border-border rounded-xl p-4 flex items-center gap-4">
           <div className="flex gap-1 flex-shrink-0">{data.photos?.length>0?data.photos.slice(0,2).map((p,i)=>(<div key={i} className="w-12 h-9 rounded-md overflow-hidden bg-bg-card"><img src={p} alt="" className="w-full h-full object-cover"/></div>)):(<div className="w-12 h-9 rounded-md bg-bg-card flex items-center justify-center text-dim text-xs">📷</div>)}</div>
           <div className="flex-1 min-w-0"><div className="text-sm font-semibold">{data.nom}</div><div className="text-xs text-dim mt-0.5">📍 {data.adresse||data.ville}</div></div>
@@ -446,7 +446,44 @@ function VenueDashboard({data,user,completion,supabase}){
 }
  
 function SoireeCard({ s, sc, formatD, deleteSoiree, showActions, past }) {
+  const [editing, setEditing] = useState(false);
+  const [editTitre, setEditTitre] = useState(s.titre);
+  const [editCachet, setEditCachet] = useState(s.cachet || '');
+  const [editAmbiance, setEditAmbiance] = useState(s.ambiance || '');
+  const [editHDebut, setEditHDebut] = useState(s.heure_debut || '');
+  const [editHFin, setEditHFin] = useState(s.heure_fin || '');
+  const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+ 
+  const saveEdit = async () => {
+    setSaving(true);
+    await supabase.from('soirees').update({ titre: editTitre, cachet: editCachet ? parseInt(editCachet) : null, ambiance: editAmbiance, heure_debut: editHDebut, heure_fin: editHFin }).eq('id', s.id);
+    s.titre = editTitre; s.cachet = editCachet ? parseInt(editCachet) : null; s.ambiance = editAmbiance; s.heure_debut = editHDebut; s.heure_fin = editHFin;
+    setSaving(false); setEditing(false);
+  };
+ 
   const st = sc[s.status] || sc.draft;
+ 
+  if (editing) return (
+    <div className="bg-bg border border-blue/20 rounded-xl p-4 animate-fade-up space-y-3">
+      <div className="flex items-center justify-between"><span className="text-xs font-medium text-blue">✏️ Modifier la soirée</span><button onClick={() => setEditing(false)} className="text-xs text-dim hover:text-white">✕</button></div>
+      <input value={editTitre} onChange={e => setEditTitre(e.target.value)} className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-blue transition" placeholder="Titre" />
+      <div className="grid grid-cols-2 gap-2">
+        <input type="time" value={editHDebut} onChange={e => setEditHDebut(e.target.value)} className="bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white" />
+        <input type="time" value={editHFin} onChange={e => setEditHFin(e.target.value)} className="bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white" />
+      </div>
+      <input value={editAmbiance} onChange={e => setEditAmbiance(e.target.value)} className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white focus:border-blue transition" placeholder="Ambiance (ex: Deep House, Techno)" />
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-dim">💰</span>
+        <input type="number" value={editCachet} onChange={e => setEditCachet(e.target.value)} className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-xs text-white" placeholder="Cachet €" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => setEditing(false)} className="text-xs px-4 py-2 rounded-lg border border-border text-muted">Annuler</button>
+        <button onClick={saveEdit} disabled={saving || !editTitre} className="flex-1 text-xs py-2 rounded-lg bg-blue text-black font-medium disabled:opacity-30">{saving ? '...' : '💾 Enregistrer'}</button>
+      </div>
+    </div>
+  );
+ 
   return (
     <div className={`bg-bg border rounded-xl p-4 transition ${past ? 'border-border/50 opacity-70' : 'border-border hover:border-dim'}`}>
       <div className="flex items-start justify-between mb-3">
