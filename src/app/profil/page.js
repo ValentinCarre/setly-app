@@ -212,6 +212,7 @@ function ArtistDashboard({data,user,completion,supabase}){
     }
     setDemandes(prev=>prev.map(d=>d.id===demandeId?{...d,status:newStatus}:d));
   };
+  const todayVenue=new Date().toISOString().split('T')[0];
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const stMap={pending:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Nouveau'},accepted:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Accepté'},declined:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Refusé'}};
   const accepted=demandes.filter(d=>d.status==='accepted').sort((a,b)=>{const da=a.soirees?.date_soiree||'';const db=b.soirees?.date_soiree||'';if(da!==db)return da.localeCompare(db);return(a.soirees?.heure_debut||'').localeCompare(b.soirees?.heure_debut||'');});
@@ -367,6 +368,7 @@ function VenueDashboard({data,user,completion,supabase}){
       const{data:receivedAvis}=await supabase.from('avis').select('note').eq('reviewed_id',user.id);
       if(receivedAvis&&receivedAvis.length>0){setAvgRating((receivedAvis.reduce((sum,a)=>sum+a.note,0)/receivedAvis.length).toFixed(1));setRatingCount(receivedAvis.length);}
       setLoadingSoirees(false);}load();},[]);
+  const todayVenue=new Date().toISOString().split('T')[0];
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const sc={draft:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Cherche artiste'},confirmed:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Confirmé'},cancelled:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Annulé'}};
  
@@ -444,6 +446,45 @@ function VenueDashboard({data,user,completion,supabase}){
       </div>
       <BottomNav active="home" role="etablissement"/>
     </div></div>
+  );
+}
+ 
+function SoireeCard({ s, sc, formatD, deleteSoiree, showActions, past }) {
+  const st = sc[s.status] || sc.draft;
+  return (
+    <div className={`bg-bg border rounded-xl p-4 transition ${past ? 'border-border/50 opacity-70' : 'border-border hover:border-dim'}`}>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="text-sm font-medium">{s.titre}</div>
+          <div className="text-xs text-dim mt-1">📅 {formatD(s.date_soiree)} · {s.heure_debut || ''}–{s.heure_fin || ''}</div>
+        </div>
+        <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue border border-blue/15">
+          {s.demandes.filter(d => d.status === 'accepted').length}/{s.nb_artistes || 1} artiste{(s.nb_artistes || 1) > 1 ? 's' : ''}
+        </span>
+        {s.demandes.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5 text-xs bg-bg-card border border-border rounded-lg px-2.5 py-1.5">
+            <span>{ARTIST_EMOJIS[d.artistes?.type_artiste] || '🎵'}</span>
+            <span className="font-medium">{d.artistes?.nom_scene}</span>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded ${d.status === 'accepted' ? 'bg-green-400/10 text-green-400' : d.status === 'declined' ? 'bg-red-400/10 text-red-400' : 'bg-accent/10 text-accent'}`}>
+              {d.status === 'accepted' ? 'OK' : d.status === 'declined' ? 'Refusé' : 'En attente'}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <span className="text-xs text-dim">
+          {s.ambiance && `🎵 ${s.ambiance}`}
+          {s.cachet && <span className="ml-2">💰 {s.cachet}€{s.moyen_paiement && ` · ${s.moyen_paiement}`}</span>}
+        </span>
+        <div className="flex gap-2">
+          {showActions && <Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}
+          <button onClick={() => deleteSoiree(s.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 hover:bg-red-400/20 transition">🗑️</button>
+        </div>
+      </div>
+    </div>
   );
 }
  
