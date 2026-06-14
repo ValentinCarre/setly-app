@@ -16,7 +16,7 @@ export default function CreerSoiree() {
   const [dateSoiree, setDateSoiree] = useState([]);
   const [heureDebut, setHeureDebut] = useState('20:00');
   const [heureFin, setHeureFin] = useState('23:00');
-  const [ambiance, setAmbiance] = useState('');
+  const [ambiance, setAmbiance] = useState([]);
   const [description, setDescription] = useState('');
   const [nbArtistes, setNbArtistes] = useState(1);
   const [cachet, setCachet] = useState('');
@@ -37,7 +37,7 @@ export default function CreerSoiree() {
       await supabase.from('soirees').insert({
         etablissement_id: user.id, titre, date_soiree: date,
         heure_debut: heureDebut, heure_fin: heureFin,
-        ambiance, description, status: 'draft',
+        ambiance: ambiance.join(', '), description, status: 'draft',
         nb_artistes: nbArtistes,
         cachet: cachet ? parseInt(cachet) : null,
         moyen_paiement: moyenPaiement || null,
@@ -64,7 +64,7 @@ export default function CreerSoiree() {
             <div><label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Fin</label><input type="time" value={heureFin} onChange={(e) => setHeureFin(e.target.value)} className="w-full bg-bg-mid border border-border rounded-lg px-4 py-3 text-sm text-white focus:border-blue transition" /></div>
           </div>
  
-          <div><label className="text-xs text-dim uppercase tracking-wider font-medium block mb-2">Ambiance recherchée</label><div className="flex flex-wrap gap-2">{AMBIANCES.map(a => (<button key={a} onClick={() => setAmbiance(ambiance === a ? '' : a)} className={`chip ${ambiance === a ? 'active-blue' : ''}`}>{a}</button>))}</div></div>
+          <div><label className="text-xs text-dim uppercase tracking-wider font-medium block mb-2">Ambiance recherchée</label><div className="flex flex-wrap gap-2">{AMBIANCES.map(a => (<button key={a} onClick={() => setAmbiance(prev => prev.includes(a) ? prev.filter(x=>x!==a) : [...prev, a])} className={`chip ${ambiance.includes(a) ? 'active-blue' : ''}`}>{a}</button>))}</div></div>
  
           {/* NB ARTISTES */}
           <div>
