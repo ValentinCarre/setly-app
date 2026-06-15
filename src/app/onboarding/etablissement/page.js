@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { VENUE_TYPES, AMBIANCES, EQUIPEMENTS } from '@/lib/constants';
-
+ 
 export default function OnboardingEtablissement() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const router = useRouter();
   const supabase = createClient();
-
+ 
   const [nom, setNom] = useState('');
   const [adresse, setAdresse] = useState('');
   const [ville, setVille] = useState('');
@@ -25,31 +25,55 @@ export default function OnboardingEtablissement() {
   const [contactTel, setContactTel] = useState('');
   const [photos, setPhotos] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
-
+ 
+  const [isEdit, setIsEdit] = useState(false);
+ 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
       setUser(user);
-    });
+      // Load existing data for editing
+      const { data: existing } = await supabase.from('etablissements').select('*').eq('id', user.id).single();
+      if (existing) {
+        setIsEdit(true);
+        setNom(existing.nom || '');
+        setAdresse(existing.adresse || '');
+        setVille(existing.ville || '');
+        setSiteWeb(existing.site_web || '');
+        setTelephone(existing.telephone || '');
+        setHoraires(existing.horaires || '');
+        setTypes(existing.type_etablissement || []);
+        setAmbiances(existing.ambiances || []);
+        setEquipements(existing.equipements || []);
+        setCapacite(existing.capacite || 50);
+        setContactNom(existing.contact_nom || '');
+        setContactTel(existing.contact_tel || '');
+        if (existing.photos && existing.photos.length > 0) {
+          setPhotoPreviews(existing.photos);
+        }
+      }
+    }
+    init();
   }, []);
-
+ 
   const toggleArr = (arr, setArr, v) => setArr(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
-
+ 
   const handlePhotos = (e) => {
     const files = Array.from(e.target.files || []);
     setPhotos(prev => [...prev, ...files]);
     setPhotoPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
   };
-
+ 
   const removePhoto = (idx) => {
     setPhotos(prev => prev.filter((_, i) => i !== idx));
     setPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
   };
-
+ 
   const handleSubmit = async () => {
     if (!nom || !ville) return;
     setLoading(true);
-
+ 
     // Upload photos
     const photoUrls = [];
     for (let i = 0; i < photos.length; i++) {
@@ -59,7 +83,7 @@ export default function OnboardingEtablissement() {
       const { data } = supabase.storage.from('photos').getPublicUrl(path);
       photoUrls.push(data.publicUrl);
     }
-
+ 
     await supabase.from('etablissements').upsert({
       id: user.id,
       nom, adresse, ville, site_web: siteWeb, telephone, horaires,
@@ -68,11 +92,11 @@ export default function OnboardingEtablissement() {
       contact_nom: contactNom, contact_tel: contactTel,
       photos: photoUrls,
     });
-
+ 
     await supabase.from('profiles').update({ onboarding_done: true }).eq('id', user.id);
     router.push('/profil');
   };
-
+ 
   return (
     <div className="min-h-screen px-4 py-20">
       <div className="max-w-lg mx-auto animate-fade-up">
@@ -84,7 +108,7 @@ export default function OnboardingEtablissement() {
             <div className="h-full bg-blue rounded-full transition-all" style={{ width: `${step * 50}%` }} />
           </div>
         </div>
-
+ 
         <div className="bg-bg-card border border-border rounded-2xl p-6">
           {step === 1 && (
             <div className="space-y-4">
@@ -106,7 +130,7 @@ export default function OnboardingEtablissement() {
                   </label>
                 </div>
               </div>
-
+ 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Nom *</label>
@@ -121,14 +145,14 @@ export default function OnboardingEtablissement() {
                     placeholder="Cannes" />
                 </div>
               </div>
-
+ 
               <div>
                 <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Adresse</label>
                 <input value={adresse} onChange={(e) => setAdresse(e.target.value)}
                   className="w-full bg-bg-mid border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-blue transition"
                   placeholder="12 rue d'Antibes, 06400 Cannes" />
               </div>
-
+ 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Site internet</label>
@@ -143,7 +167,7 @@ export default function OnboardingEtablissement() {
                     placeholder="04 93 XX XX XX" />
                 </div>
               </div>
-
+ 
               <div>
                 <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-1.5">Contact interne</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -156,14 +180,14 @@ export default function OnboardingEtablissement() {
                 </div>
                 <p className="text-xs text-dim mt-1.5 flex items-center gap-1">🔒 Visible uniquement par l'équipe Setly</p>
               </div>
-
+ 
               <button onClick={() => setStep(2)} disabled={!nom || !ville}
                 className="w-full bg-blue text-black font-bold py-3 rounded-xl hover:shadow-lg hover:shadow-blue/25 transition disabled:opacity-30">
                 Suivant
               </button>
             </div>
           )}
-
+ 
           {step === 2 && (
             <div className="space-y-5">
               <div>
@@ -175,7 +199,7 @@ export default function OnboardingEtablissement() {
                   ))}
                 </div>
               </div>
-
+ 
               <div>
                 <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-2">Ambiances recherchées</label>
                 <div className="flex flex-wrap gap-2">
@@ -185,14 +209,14 @@ export default function OnboardingEtablissement() {
                   ))}
                 </div>
               </div>
-
+ 
               <div>
                 <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-2">Capacité : {capacite} pers.</label>
                 <input type="range" min="10" max="500" step="10" value={capacite}
                   onChange={(e) => setCapacite(parseInt(e.target.value))}
                   className="w-full accent-blue-DEFAULT" />
               </div>
-
+ 
               <div>
                 <label className="text-xs text-dim uppercase tracking-wider font-medium block mb-2">Équipement disponible</label>
                 <div className="flex flex-wrap gap-2">
@@ -204,7 +228,7 @@ export default function OnboardingEtablissement() {
                   ))}
                 </div>
               </div>
-
+ 
               <div className="flex gap-3">
                 <button onClick={() => setStep(1)}
                   className="px-6 py-3 rounded-xl border border-border text-sm text-muted hover:bg-bg-hover transition">
@@ -222,3 +246,4 @@ export default function OnboardingEtablissement() {
     </div>
   );
 }
+ 
