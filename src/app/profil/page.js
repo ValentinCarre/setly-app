@@ -491,7 +491,7 @@ function SoireeCard({ s, sc, formatD, deleteSoiree, showActions, past }) {
           <div className="text-sm font-medium">{s.titre}</div>
           <div className="text-xs text-dim mt-1">📅 {formatD(s.date_soiree)} · {s.heure_debut || ''}–{s.heure_fin || ''}</div>
         </div>
-        <div className="flex items-center gap-2"><span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span>{!past&&<button onClick={()=>setEditing(true)} className="text-dim hover:text-white transition text-sm">✏️</button>}</div>
+        <div className="flex items-center gap-2"><span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${st.bg}`}>{st.label}</span>{!past&&s.status==='draft'&&<button onClick={()=>setEditing(true)} className="text-dim hover:text-white transition text-sm">✏️</button>}</div>
       </div>
       <div className="flex flex-wrap gap-2 mb-3">
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue border border-blue/15">
