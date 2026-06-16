@@ -210,7 +210,7 @@ function ArtistProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id
             <div className="space-y-2">{pastSoirees.slice(0, 6).map((d, i) => (
               <div key={i} className="bg-bg border border-border rounded-lg p-3 flex items-center gap-3">
                 <div className="text-center w-10 flex-shrink-0"><div className="text-sm font-semibold">{new Date(d.soirees.date_soiree + 'T00:00:00').getDate()}</div><div className="text-[9px] text-dim uppercase">{['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'][new Date(d.soirees.date_soiree + 'T00:00:00').getMonth()]}</div></div>
-                <div className="flex-1 min-w-0"><div className="text-xs font-medium">{d.soirees.titre}</div><div className="text-[10px] text-dim">{d.soirees.etablissements?.nom} · {d.soirees.etablissements?.ville}</div></div>
+                <div className="flex-1 min-w-0"><div className="text-xs font-medium">{d.soirees.titre}</div><div className="text-[10px] text-dim"><Link href={`/profil/${d.soirees.etablissement_id}`} className="hover:text-blue transition">{d.soirees.etablissements?.nom}</Link> · {d.soirees.etablissements?.ville}</div></div>
               </div>
             ))}</div>
           </div>
@@ -225,7 +225,7 @@ function ArtistProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-amber-400 text-sm">{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
-                    {a.soirees?.etablissements?.nom && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue">🍸 {a.soirees.etablissements.nom}</span>}
+                    {a.soirees?.etablissements?.nom && <Link href={`/profil/${a.soirees.etablissement_id}`} className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue hover:bg-blue/20 transition">🍸 {a.soirees.etablissements.nom}</Link>}
                   </div>
                   <div className="text-[10px] text-dim">{a.soirees?.titre} · {formatD(a.soirees?.date_soiree)}</div>
                 </div>
