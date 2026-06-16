@@ -514,7 +514,7 @@ function SoireeCard({ s, sc, formatD, deleteSoiree, showActions, past }) {
         </span>
         <div className="flex gap-2">
           {showActions && <Link href="/explorer" className="text-xs px-3 py-1.5 rounded-lg bg-blue text-black font-medium">Trouver un artiste</Link>}
-          <button onClick={() => deleteSoiree(s.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 hover:bg-red-400/20 transition">🗑️</button>
+          {s.status!=='confirmed'&&<button onClick={() => deleteSoiree(s.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 hover:bg-red-400/20 transition">🗑️</button>}
         </div>
       </div>
     </div>
