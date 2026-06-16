@@ -144,7 +144,7 @@ function MandatoryRating({ ratings, supabase, userId, role, onComplete }) {
 }
  
 function ArtistDashboard({data,user,completion,supabase}){
-  const[datesDispo,setDatesDispo]=useState(data.dates_dispo||[]);
+  const[datesDispo,setDatesDispo]=useState(()=>{const today=new Date().toISOString().split('T')[0];const future=(data.dates_dispo||[]).filter(d=>d>=today);if(future.length!==(data.dates_dispo||[]).length){supabase.from('artistes').update({dates_dispo:future}).eq('id',user.id);}return future;});
   const[soireesToRate,setSoireesToRate]=useState([]);
   const[myAvis,setMyAvis]=useState([]);
   const[avgRating,setAvgRating]=useState(null);
