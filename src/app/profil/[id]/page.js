@@ -57,6 +57,15 @@ export default function ProfilPublic() {
         setRole('etablissement');
         setProfileData(venue);
         const { data: reviews } = await supabase.from('avis').select('*, soirees(titre, date_soiree)').eq('reviewed_id', id).order('created_at', { ascending: false });
+        // Load reviewer names
+        for (const r of (reviews || [])) {
+          const { data: art } = await supabase.from('artistes').select('nom_scene, photo_url').eq('id', r.reviewer_id).single();
+          if (art) { r.reviewer_name = art.nom_scene; r.reviewer_photo = art.photo_url; }
+          else {
+            const { data: etab } = await supabase.from('etablissements').select('nom').eq('id', r.reviewer_id).single();
+            if (etab) r.reviewer_name = etab.nom;
+          }
+        }
         setAvis(reviews || []);
         const { data: soirs } = await supabase.from('soirees').select('*').eq('etablissement_id', id);
         const todayStr = new Date().toISOString().split('T')[0];
@@ -420,7 +429,13 @@ function VenueProfile({ data, avis, avgRating, pastSoirees, formatD, isSelf, id,
           {avis.length === 0 ? <div className="bg-bg border border-border rounded-xl p-6 text-center"><div className="text-2xl mb-2">⭐</div><p className="text-xs text-dim">Aucun avis</p></div> : (
             <div className="space-y-2">{avis.map(a => (
               <div key={a.id} className="bg-bg border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2"><div className="text-amber-400 text-sm">{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</div><div className="text-[10px] text-dim">{a.soirees?.titre} · {formatD(a.soirees?.date_soiree)}</div></div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 text-sm">{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
+                    {a.reviewer_name && <Link href={`/profil/${a.reviewer_id}`} className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition">🎧 {a.reviewer_name}</Link>}
+                  </div>
+                  <div className="text-[10px] text-dim">{a.soirees?.titre} · {formatD(a.soirees?.date_soiree)}</div>
+                </div>
                 {a.commentaire && <p className="text-xs text-muted leading-relaxed">{a.commentaire}</p>}
               </div>
             ))}</div>
