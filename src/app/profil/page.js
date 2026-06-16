@@ -234,7 +234,7 @@ function ArtistDashboard({data,user,completion,supabase}){
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-accent">{pending.length}</div><div className="text-[11px] text-dim mt-1">En attente</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{accepted.length}</div><div className="text-[11px] text-dim mt-1">Acceptées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{matchingSoirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées dispo</div></div>
-        <div className="bg-bg-card rounded-xl p-3.5 text-center">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</div>
+        <Link href={`/profil/${user.id}`} className="bg-bg-card rounded-xl p-3.5 text-center hover:border hover:border-amber-400/20 transition cursor-pointer">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</Link>
       </div>
  
       {/* MATCHING SOIREES */}
@@ -385,7 +385,7 @@ function VenueDashboard({data,user,completion,supabase}){
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 animate-fade-up" style={{animationDelay:'0.05s'}}>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-blue">{soirees.length}</div><div className="text-[11px] text-dim mt-1">Soirées</div></div>
         <div className="bg-bg-card rounded-xl p-3.5 text-center"><div className="text-xl font-semibold text-green-400">{soirees.filter(s=>s.status==='confirmed').length}</div><div className="text-[11px] text-dim mt-1">Confirmées</div></div>
-        <div className="bg-bg-card rounded-xl p-3.5 text-center">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</div>
+        <Link href={`/profil/${user.id}`} className="bg-bg-card rounded-xl p-3.5 text-center hover:border hover:border-amber-400/20 transition cursor-pointer">{avgRating?<><div className="text-xl font-semibold text-amber-400">{avgRating}</div><div className="text-[10px] text-amber-400">{'★'.repeat(Math.round(avgRating))+'☆'.repeat(5-Math.round(avgRating))}</div><div className="text-[10px] text-dim">{ratingCount} avis</div></>:<><div className="text-xl font-semibold text-dim">—</div><div className="text-[11px] text-dim mt-1">Note</div></>}</Link>
       </div>
  
       
