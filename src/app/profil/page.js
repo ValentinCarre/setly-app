@@ -216,7 +216,7 @@ function ArtistDashboard({data,user,completion,supabase}){
   const formatD=(d)=>{if(!d)return'';const dt=new Date(d+'T00:00:00');const mn=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];return`${dt.getDate()} ${mn[dt.getMonth()]} ${dt.getFullYear()}`;};
   const stMap={pending:{bg:'bg-accent/10 border-accent/20 text-accent',label:'Nouveau'},accepted:{bg:'bg-green-400/10 border-green-400/20 text-green-400',label:'Accepté'},declined:{bg:'bg-red-400/10 border-red-400/20 text-red-400',label:'Refusé'}};
   const accepted=demandes.filter(d=>d.status==='accepted').sort((a,b)=>{const da=a.soirees?.date_soiree||'';const db=b.soirees?.date_soiree||'';if(da!==db)return da.localeCompare(db);return(a.soirees?.heure_debut||'').localeCompare(b.soirees?.heure_debut||'');});
-  const pending=demandes.filter(d=>d.status==='pending');
+  const pending=demandes.filter(d=>d.status==='pending'&&d.soirees?.status!=='confirmed');
  
   return(
     <div className="min-h-screen px-4 py-16 sm:py-20"><div className="max-w-2xl mx-auto">
@@ -497,13 +497,13 @@ function SoireeCard({ s, sc, formatD, deleteSoiree, showActions, past }) {
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue/10 text-blue border border-blue/15">
           {s.demandes.filter(d => d.status === 'accepted').length}/{s.nb_artistes || 1} artiste{(s.nb_artistes || 1) > 1 ? 's' : ''}
         </span>
-        {s.demandes.map((d, i) => (
+        {(s.status==='confirmed'?s.demandes.filter(d=>d.status==='accepted'):s.demandes).map((d, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs bg-bg-card border border-border rounded-lg px-2.5 py-1.5">
             <span>{ARTIST_EMOJIS[d.artistes?.type_artiste] || '🎵'}</span>
             <span className="font-medium">{d.artistes?.nom_scene}</span>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded ${d.status === 'accepted' ? 'bg-green-400/10 text-green-400' : d.status === 'declined' ? 'bg-red-400/10 text-red-400' : 'bg-accent/10 text-accent'}`}>
+            {s.status!=='confirmed'&&<span className={`text-[9px] px-1.5 py-0.5 rounded ${d.status === 'accepted' ? 'bg-green-400/10 text-green-400' : d.status === 'declined' ? 'bg-red-400/10 text-red-400' : 'bg-accent/10 text-accent'}`}>
               {d.status === 'accepted' ? 'OK' : d.status === 'declined' ? 'Refusé' : 'En attente'}
-            </span>
+            </span>}
           </div>
         ))}
       </div>
